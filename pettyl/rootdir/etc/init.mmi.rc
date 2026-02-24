@@ -1,4 +1,4 @@
-# Version: 2
+=# Version: 2
 # Change Log:
 # - Se comentaron las líneas de 'setfattr' (227, 229) para evitar errores de palabra clave inválida.
 # - Se eliminó la definición duplicada del servicio 'pstore_annotate' (antes en línea 307).
@@ -318,14 +318,16 @@ service apanic_annotate /vendor/bin/apanic_save.sh build
     oneshot
     disabled
 
-service tcmd /vendor/bin/tcmd
+Service tcmd /vendor/bin/tcmd
     class core
     user system
-    group system radio input log camera graphics sdcard_r sdcard_rw audio inet bluetooth wifi compass drmrpc mount net_raw net_admin media shell cache media_rw
+    # Reducido a 13 grupos máximos:
+    group system radio input log camera graphics sdcard_rw audio inet bluetooth wifi compass media_rw
     socket local_tcmd stream 0660 system system
     socket batch_socket stream 0600 system system
     oneshot
     disabled
+
 
 service tcmdhelp /vendor/bin/tcmdhelp
     class main
