@@ -5,7 +5,7 @@
 # - Generación automática de Tags y subida a "Releases" de GitHub.
 # - NUEVO: Se integró el envío de Live Logs al servidor de Render en 'repo sync' y 'mka bacon'.
 
-name: Build LineageOS 17.1 for pettyl
+name: Build LineageOS 17.1 for pettyl (with logs)
 
 on:
   workflow_dispatch:
