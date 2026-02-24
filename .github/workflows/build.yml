@@ -1,8 +1,7 @@
-# Version: 4.1
+# Version: 5
 # Changelog:
-# - Corrección de sintaxis en booleanos de GitHub Actions (agregadas comillas simples).
-# - Corrección de rutas absolutas en upload-artifact (cambio de ~ a /home/runner).
-# - Eliminación de comentarios inline en bloques 'with' para evitar problemas de parseo YAML.
+# - Corrección del error de sintaxis YAML: Se eliminaron los dos puntos en el nombre del paso 76.
+# - Ajuste de booleanos en la acción jlumbroso/free-disk-space.
 
 name: Build LineageOS 17.1 for pettyl
 
@@ -21,13 +20,13 @@ jobs:
       - name: Limpieza BRUTAL de espacio en disco (Estilo Linux Void)
         uses: jlumbroso/free-disk-space@main
         with:
-          tool-cache: 'true'
-          android: 'true'
-          dotnet: 'true'
-          haskell: 'true'
-          large-packages: 'true'
-          docker-images: 'true'
-          swap-storage: 'false'
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
 
       - name: Purgar paquetes innecesarios manualmente
         run: |
@@ -73,7 +72,7 @@ jobs:
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 device/motorola/pettyl
           git clone https://github.com/elmendezz/vendor_pettyl -b lineage-17.1 vendor/motorola/pettyl
 
-      - name: TRUCO: Eliminar .repo para liberar espacio vital
+      - name: TRUCO Eliminar repo oculto para liberar espacio vital
         run: |
           echo "Eliminando la carpeta .repo para recuperar espacio..."
           rm -rf /home/runner/android/lineage/.repo
@@ -96,4 +95,4 @@ jobs:
         with:
           name: LineageOS-17.1-pettyl-Build
           path: '/home/runner/android/lineage/out/target/product/pettyl/lineage-*.zip'
-          retention-days: '7'
+          retention-days: 7
