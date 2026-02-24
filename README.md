@@ -44,6 +44,50 @@ To build LineageOS 17.1 for this device, you need to set up your workspace as fo
 
 ---
 
+# Versión en Español
+
+Este repositorio contiene la configuración del dispositivo y las fuentes para el **Motorola Moto E5 Play GO** (nombre clave pettyl).
+
+## Especificaciones del Dispositivo
+
+| Componente | Especificación |
+|:-----------|:---------------|
+| SoC | Qualcomm MSM8917 Snapdragon 425 |
+| CPU | Quad-core (4x1.4 GHz Cortex-A53) |
+| GPU | Adreno 308 |
+| Memoria | 1 GB RAM |
+| Almacenamiento | 16 GB |
+| Batería | Li-Ion 2100 mAh |
+| Pantalla | 960 x 480 píxeles, relación 18:9 (5.34") |
+| Cámara | 8 MP, flash LED |
+| Android de Fábrica | 8.0 (Oreo) |
+
+---
+
+## Estructura de las Fuentes
+
+Para compilar LineageOS 17.1 para este dispositivo, debes configurar tu espacio de trabajo de la siguiente manera:
+
+* Device Tree: device/motorola/pettyl
+* Vendor Tree: vendor/motorola/vendor_pettyl
+
+## Cómo Compilar
+
+1. Inicializar las fuentes de LineageOS:
+   repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
+
+2. Sincronizar el código fuente:
+   repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+3. Configurar el entorno:
+   source build/envsetup.sh
+   lunch lineage_pettyl-userdebug
+
+4. Iniciar la compilación:
+   mka bacon -j$(nproc --all)
+
+---
+
 ## License & Copyright
 * Copyright (C) 2019 - 2026: The LineageOS Project.
 * Device Maintainer: elmendezz (https://github.com/elmendezz)
