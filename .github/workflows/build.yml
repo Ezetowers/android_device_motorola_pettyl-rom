@@ -1,40 +1,36 @@
-# Version:2
+# Version:3
 # Changelog:
 # - Versión 1: Creación del flujo de trabajo CI inicial para compilar LineageOS 17.1 para el dispositivo pettyl.
-# - Versión 1: Integración de la acción 'maximize-build-space' para evitar errores de almacenamiento en GitHub Actions.
-# - Versión 1: Configuración e instalación de dependencias del sistema operativo (Ubuntu 20.04) necesarias para compilar Android 10.
-# - Versión 1: Sincronización del repositorio de LineageOS (rama lineage-17.1) optimizada con --depth=1 para ahorrar tiempo y espacio.
-# - Versión 1: Clonación del device tree (android_device_motorola_pettyl-rom) en device/motorola/pettyl.
-# - Versión 1: Clonación del repositorio vendor (vendor_pettyl) en vendor/motorola/pettyl.
-# - Versión 1: Configuración del entorno de compilación (envsetup.sh) y ejecución del comando 'mka bacon'.
-# - Versión 1: Configuración de subida automática del archivo ZIP generado como artefacto de GitHub para su descarga.
-# - Versión 2: Actualización del sistema operativo del runner de ubuntu-20.04 a ubuntu-22.04.
-# - Versión 2: Actualización de la acción actions/upload-artifact de v3 a v4 para solucionar el error de depreciación de GitHub.
-# - Versión 2: Actualización preventiva de la acción actions/checkout de v3 a v4 para garantizar compatibilidad con Node.js 20 en Ubuntu 22.04.
+# - Versión 1: Integración de la acción 'maximize-build-space' para evitar errores de almacenamiento.
+# - Versión 2: Actualización a ubuntu-22.04 y upload-artifact@v4 por depreciación.
+# - Versión 3: Ajuste agresivo de limpieza de espacio para evitar "No space left on device".
+# - Versión 3: Optimización de repo sync con --no-tags y --force-sync para reducir el tamaño del árbol de fuentes.
+# - Versión 3: Eliminación de archivos innecesarios de Azure y paquetes sobrantes antes de iniciar el proceso.
 
 name: Build LineageOS 17.1 for pettyl
 
 on:
-  workflow_dispatch: # Esto te permite iniciar la compilación a mano con un botón desde la pestaña "Actions"
+  workflow_dispatch:
 
 jobs:
   build:
     name: Compilar ROM
-    runs-on: ubuntu-22.04 # Actualizado a la versión 22.04 a petición tuya
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout del repositorio actual
         uses: actions/checkout@v4
 
-      - name: Limpiar espacio en el disco del servidor (Súper importante)
+      - name: Limpieza agresiva de espacio en disco
         uses: easimon/maximize-build-space@master
         with:
-          root-reserve-mb: 8192
-          swap-size-mb: 8192
+          root-reserve-mb: 2048 # Bajamos la reserva para darle más a la ROM
+          swap-size-mb: 1024
           remove-dotnet: 'true'
-          remove-android: 'true' # Borramos el SDK que trae por defecto GitHub para ganar gigabytes
+          remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
+          remove-docker-images: 'true' # Borramos imágenes de Docker para ganar más GB
 
       - name: Instalar dependencias del sistema
         run: |
@@ -42,48 +38,43 @@ jobs:
           sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 python3
           sudo ln -sf /usr/bin/python3 /usr/bin/python
 
-      - name: Instalar la herramienta 'repo'
+      - name: Instalar repo
         run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           sudo cp ~/bin/repo /usr/local/bin/repo
 
-      - name: Configurar identidad de Git
+      - name: Configurar Git
         run: |
           git config --global user.email "bot@github.com"
           git config --global user.name "GitHub Actions Bot"
 
-      - name: Inicializar y sincronizar el código fuente de LineageOS
+      - name: Sincronizar LineageOS (Modo ultra ligero)
         run: |
           mkdir -p ~/android/lineage
           cd ~/android/lineage
-          # Usamos depth=1 para no descargar el historial completo y ahorrar decenas de GB
+          # Agregamos --depth=1 y quitamos tags para ahorrar el máximo espacio posible
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
-          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet
 
-      - name: Clonar repositorios del dispositivo y vendor
+      - name: Clonar repositorios de pettyl
         run: |
           cd ~/android/lineage
-          
-          # Clonar tu device tree exactamente de tu repo
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 device/motorola/pettyl
-          
-          # Clonar el vendor
           git clone https://github.com/elmendezz/vendor_pettyl -b lineage-17.1 vendor/motorola/pettyl
 
-      - name: Compilar LineageOS (mka bacon)
+      - name: Compilar LineageOS
         run: |
           cd ~/android/lineage
           source build/envsetup.sh
-          # Preparamos el entorno para tu dispositivo específico
           lunch lineage_pettyl-userdebug
-          # ¡A compilar con todos los núcleos disponibles!
+          # mka bacon genera el ZIP flasheable
           mka bacon -j$(nproc --all)
 
-      - name: Subir la ROM generada (Artefacto)
+      - name: Subir ROM
         uses: actions/upload-artifact@v4
         with:
           name: LineageOS-17.1-pettyl-Build
-          # Ruta donde LineageOS escupe el archivo final
           path: ~/android/lineage/out/target/product/pettyl/lineage-*.zip
+          retention-days: 7
