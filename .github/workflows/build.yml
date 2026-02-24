@@ -1,9 +1,8 @@
-# Version: 4
+# Version: 4.1
 # Changelog:
-# - Versión 4: Cambio a jlumbroso/free-disk-space para limpieza extrema ("Tipo Void Linux").
-# - Versión 4: Se añade comprobación de disco (df -h) antes del repo init.
-# - Versión 4: TRUCO EXTREMO - Eliminación de la carpeta .repo después de clonar para recuperar ~30GB.
-# - Versión 4: Desactivación de CCACHE para evitar que los archivos cacheados saturen el disco.
+# - Corrección de sintaxis en booleanos de GitHub Actions (agregadas comillas simples).
+# - Corrección de rutas absolutas en upload-artifact (cambio de ~ a /home/runner).
+# - Eliminación de comentarios inline en bloques 'with' para evitar problemas de parseo YAML.
 
 name: Build LineageOS 17.1 for pettyl
 
@@ -22,13 +21,13 @@ jobs:
       - name: Limpieza BRUTAL de espacio en disco (Estilo Linux Void)
         uses: jlumbroso/free-disk-space@main
         with:
-          tool-cache: true
-          android: true # Borra el SDK preinstalado que no necesitamos para compilar la ROM
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: false
+          tool-cache: 'true'
+          android: 'true'
+          dotnet: 'true'
+          haskell: 'true'
+          large-packages: 'true'
+          docker-images: 'true'
+          swap-storage: 'false'
 
       - name: Purgar paquetes innecesarios manualmente
         run: |
@@ -44,10 +43,10 @@ jobs:
 
       - name: Instalar repo
         run: |
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          sudo cp ~/bin/repo /usr/local/bin/repo
+          mkdir -p /home/runner/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > /home/runner/bin/repo
+          chmod a+x /home/runner/bin/repo
+          sudo cp /home/runner/bin/repo /usr/local/bin/repo
 
       - name: Configurar Git
         run: |
@@ -63,41 +62,38 @@ jobs:
 
       - name: Sincronizar LineageOS (Modo ultra ligero)
         run: |
-          mkdir -p ~/android/lineage
-          cd ~/android/lineage
-          # Profundidad 1 y sin clones extra
+          mkdir -p /home/runner/android/lineage
+          cd /home/runner/android/lineage
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet
 
       - name: Clonar repositorios de pettyl
         run: |
-          cd ~/android/lineage
+          cd /home/runner/android/lineage
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 device/motorola/pettyl
           git clone https://github.com/elmendezz/vendor_pettyl -b lineage-17.1 vendor/motorola/pettyl
 
       - name: TRUCO: Eliminar .repo para liberar espacio vital
         run: |
-          echo "Eliminando la carpeta .repo para liberar unos ~30GB de espacio..."
-          rm -rf ~/android/lineage/.repo
+          echo "Eliminando la carpeta .repo para recuperar espacio..."
+          rm -rf /home/runner/android/lineage/.repo
           echo "=== ESPACIO EN DISCO DESPUÉS DE BORRAR .REPO ==="
           df -h
 
       - name: Compilar LineageOS
         run: |
-          cd ~/android/lineage
-          # Desactivar ccache estrictamente para no gastar disco extra
+          cd /home/runner/android/lineage
           export USE_CCACHE=0
           export CCACHE_DISABLE=1
           
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
           
-          # mka bacon genera el ZIP flasheable
           mka bacon -j$(nproc --all)
 
       - name: Subir ROM
         uses: actions/upload-artifact@v4
         with:
           name: LineageOS-17.1-pettyl-Build
-          path: ~/android/lineage/out/target/product/pettyl/lineage-*.zip
-          retention-days: 7
+          path: '/home/runner/android/lineage/out/target/product/pettyl/lineage-*.zip'
+          retention-days: '7'
