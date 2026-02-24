@@ -1,4 +1,4 @@
-# Version:1
+# Version:2
 # Changelog:
 # - Versión 1: Creación del flujo de trabajo CI inicial para compilar LineageOS 17.1 para el dispositivo pettyl.
 # - Versión 1: Integración de la acción 'maximize-build-space' para evitar errores de almacenamiento en GitHub Actions.
@@ -8,6 +8,9 @@
 # - Versión 1: Clonación del repositorio vendor (vendor_pettyl) en vendor/motorola/pettyl.
 # - Versión 1: Configuración del entorno de compilación (envsetup.sh) y ejecución del comando 'mka bacon'.
 # - Versión 1: Configuración de subida automática del archivo ZIP generado como artefacto de GitHub para su descarga.
+# - Versión 2: Actualización del sistema operativo del runner de ubuntu-20.04 a ubuntu-22.04.
+# - Versión 2: Actualización de la acción actions/upload-artifact de v3 a v4 para solucionar el error de depreciación de GitHub.
+# - Versión 2: Actualización preventiva de la acción actions/checkout de v3 a v4 para garantizar compatibilidad con Node.js 20 en Ubuntu 22.04.
 
 name: Build LineageOS 17.1 for pettyl
 
@@ -17,11 +20,11 @@ on:
 jobs:
   build:
     name: Compilar ROM
-    runs-on: ubuntu-22.04 # Versión súper estable para lidiar con el código de Android 10
+    runs-on: ubuntu-22.04 # Actualizado a la versión 22.04 a petición tuya
 
     steps:
       - name: Checkout del repositorio actual
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Limpiar espacio en el disco del servidor (Súper importante)
         uses: easimon/maximize-build-space@master
@@ -66,7 +69,7 @@ jobs:
           # Clonar tu device tree exactamente de tu repo
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 device/motorola/pettyl
           
-          # Clonar el vendor (asumo que está en tu GitHub bajo este nombre de acuerdo a lo que me comentaste)
+          # Clonar el vendor
           git clone https://github.com/elmendezz/vendor_pettyl -b lineage-17.1 vendor/motorola/pettyl
 
       - name: Compilar LineageOS (mka bacon)
@@ -79,7 +82,7 @@ jobs:
           mka bacon -j$(nproc --all)
 
       - name: Subir la ROM generada (Artefacto)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: LineageOS-17.1-pettyl-Build
           # Ruta donde LineageOS escupe el archivo final
