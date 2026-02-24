@@ -1,0 +1,2 @@
+on early-init
+    setprop ro.config.wallpaper /oem/timit/media/wallpapers/wallpaper_pettyl_timit_001.jpg
