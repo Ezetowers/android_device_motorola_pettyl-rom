@@ -5,7 +5,7 @@
 # - Se configuró la subida de artefactos para que rescate imágenes y logs INCLUSO SI FALLA.
 # - NUEVO: Se integró el envío de Live Logs a Render conservando el volcado a build_log.txt.
 
-name: Build LineageOS 17.1 for pettyl
+name: Build LineageOS 17.1 for pettyl - logs
 
 on:
   workflow_dispatch:
