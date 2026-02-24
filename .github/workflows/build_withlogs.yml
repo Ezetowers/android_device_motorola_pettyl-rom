@@ -1,11 +1,11 @@
-# Version: 8
+# Version: 8.1
 # Changelog:
-# - Se corrigió la lógica de clonación: ahora descarga el repo unificado y mueve las carpetas pettyl y vendor_pettyl a sus respectivas rutas.
-# - Se añadió un sistema "Anti-Rojo".
-# - Generación automática de Tags y subida a "Releases" de GitHub.
-# - NUEVO: Se integró el envío de Live Logs al servidor de Render en 'repo sync' y 'mka bacon'.
+# - Se eliminó el "Anti-Rojo" para dejar que GitHub muestre los errores reales.
+# - Se añadió un registro de logs (build_log.txt).
+# - Se configuró la subida de artefactos para que rescate imágenes y logs INCLUSO SI FALLA.
+# - NUEVO: Se integró el envío de Live Logs a Render conservando el volcado a build_log.txt.
 
-name: Build LineageOS 17.1 for pettyl (with logs)
+name: Build LineageOS 17.1 for pettyl
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
       - name: Checkout del repositorio actual
         uses: actions/checkout@v4
 
-      - name: Limpieza BRUTAL de espacio en disco (Estilo Linux Void)
+      - name: Limpieza BRUTAL de espacio en disco
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: true
@@ -43,6 +43,7 @@ jobs:
       - name: Instalar dependencias del sistema
         run: |
           sudo apt-get update
+          # Nota: Se agregó 'jq' para formatear los logs de forma segura
           sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick jq lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 python3
           sudo ln -sf /usr/bin/python3 /usr/bin/python
 
@@ -58,46 +59,32 @@ jobs:
           git config --global user.email "bot@github.com"
           git config --global user.name "GitHub Actions Bot"
 
-      - name: Comprobar espacio en disco ANTES de repo init
-        run: |
-          echo "=== ESPACIO EN DISCO ANTES DE DESCARGAR EL CÓDIGO ==="
-          df -h
-
-      - name: Sincronizar LineageOS (Con Anti-Rojo y Live Logs)
+      - name: Sincronizar LineageOS (Con Live Logs)
         run: |
           mkdir -p /home/runner/android/lineage
           cd /home/runner/android/lineage
-          repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1 || true
+          repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
           
-          echo "Iniciando repo sync con Live Logs..."
-          
-          # Desactivamos el fallo inmediato por pipe para mantener vivo el Anti-Rojo
+          # Desactivamos el fallo inmediato por pipe para poder capturar el error original
           set +e +o pipefail
           
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet 2>&1 | while IFS= read -r line; do
-            # jq asegura que si hay comillas en el log, no se rompa el JSON
             PAYLOAD=$(jq -n --arg log "$line" '{log: $log}')
             curl -s -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "${{ env.WEBHOOK_URL }}/${{ github.run_id }}" > /dev/null || true
             echo "$line"
           done
           
-          # PIPESTATUS rescata si el 'repo sync' falló realmente, ignorando el 'while'
+          # PIPESTATUS[0] guarda el código de salida de 'repo sync'
           SYNC_STATUS=${PIPESTATUS[0]}
           set -e -o pipefail
           
+          # Si repo sync falló, forzamos el error para que GitHub Actions se ponga rojo
           if [ $SYNC_STATUS -ne 0 ]; then
-            echo "⚠️ ERROR: El repo sync falló (probablemente por espacio o tiempo)."
-            echo "Calculando cuánto se logró descargar..."
-            du -sh /home/runner/android/lineage
-            echo "=== ESPACIO EN DISCO ACTUAL ==="
-            df -h
-            echo "Saliendo con código de éxito para mantener en verde y saltar siguientes pasos..."
-            echo "SKIP_REMAINING=true" >> $GITHUB_ENV
-            exit 0
+            echo "⚠️ ERROR: El repo sync falló."
+            exit $SYNC_STATUS
           fi
 
       - name: Clonar y organizar repositorios de pettyl y vendor
-        if: env.SKIP_REMAINING != 'true'
         run: |
           cd /home/runner/android/lineage
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
@@ -108,67 +95,58 @@ jobs:
           rm -rf /tmp/pettyl_unified
 
       - name: TRUCO Eliminar repo oculto para liberar espacio vital
-        if: env.SKIP_REMAINING != 'true'
         run: |
           echo "Eliminando la carpeta .repo para recuperar espacio..."
           rm -rf /home/runner/android/lineage/.repo
-          echo "=== ESPACIO EN DISCO DESPUÉS DE BORRAR .REPO ==="
           df -h
 
-      - name: Compilar LineageOS (Con Anti-Rojo y Live Logs)
-        if: env.SKIP_REMAINING != 'true'
+      - name: Compilar LineageOS (Con Live Logs y Guardado Local)
         run: |
           cd /home/runner/android/lineage
           export USE_CCACHE=0
           export CCACHE_DISABLE=1
-          
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
           
-          echo "Iniciando compilación (mka bacon) con Live Logs..."
-          
           set +e +o pipefail
           
-          mka bacon -j$(nproc --all) 2>&1 | while IFS= read -r line; do
+          # Guardamos en build_log.txt CON tee Y mandamos a Render al mismo tiempo
+          mka bacon -j$(nproc --all) 2>&1 | tee build_log.txt | while IFS= read -r line; do
             PAYLOAD=$(jq -n --arg log "$line" '{log: $log}')
             curl -s -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "${{ env.WEBHOOK_URL }}/${{ github.run_id }}" > /dev/null || true
-            echo "$line"
+            # No usamos echo aquí porque 'tee' ya imprime en la consola de GitHub Actions
           done
           
+          # PIPESTATUS[0] sigue capturando el éxito o fracaso de 'mka bacon'
           BUILD_STATUS=${PIPESTATUS[0]}
           set -e -o pipefail
           
           if [ $BUILD_STATUS -ne 0 ]; then
             echo "⚠️ ERROR: La compilación falló."
-            echo "Calculando cuánto pesa la carpeta de código y compilación actual..."
-            du -sh /home/runner/android/lineage
-            echo "=== ESPACIO EN DISCO ACTUAL ==="
-            df -h
-            echo "Saliendo con código de éxito para mantener en verde..."
-            echo "SKIP_REMAINING=true" >> $GITHUB_ENV
-            exit 0
+            exit $BUILD_STATUS
           fi
 
-      - name: Subir ROM como Artefacto (Respaldo temporal)
-        if: env.SKIP_REMAINING != 'true'
+      - name: Rescatar Logs e Imágenes (Se ejecuta aunque falle)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LineageOS-17.1-pettyl-Build
-          path: '/home/runner/android/lineage/out/target/product/pettyl/lineage-*.zip'
-          retention-days: 7
+          name: Archivos-Rescatados-Pettyl
+          path: |
+            /home/runner/android/lineage/build_log.txt
+            /home/runner/android/lineage/out/target/product/pettyl/*.img
+            /home/runner/android/lineage/out/target/product/pettyl/*.zip
+          retention-days: 5
 
       - name: Preparar fecha para la Release
-        if: env.SKIP_REMAINING != 'true'
         run: echo "FECHA=$(date +'%Y%m%d_%H%M')" >> $GITHUB_ENV
 
       - name: Crear Release y Subir ROM a GitHub
         uses: softprops/action-gh-release@v2
-        if: env.SKIP_REMAINING != 'true'
         with:
           tag_name: LOS-17.1-${{ env.FECHA }}
           name: "LineageOS 17.1 - Moto E5 Play (pettyl) 🚀"
           body: |
-            ### Compilación Automática Exitosa
+            ### Compilación Automática
             - **Dispositivo:** Motorola Moto E5 Play (pettyl)
             - **Android:** 10 (LineageOS 17.1)
             - **Fecha:** ${{ env.FECHA }}
