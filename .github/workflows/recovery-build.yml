@@ -1,4 +1,4 @@
-# Version: 3
+# Version: 4
 # Dependencies: actions/checkout@v4, actions/upload-artifact@v4, actions/cache@v4
 # Changelog:
 # - Initial version: Setup basic workflow for recovery image generation.
@@ -7,6 +7,7 @@
 # - Update: Implemented ccache support to speed up subsequent builds.
 # - Update: Refined J32 core utilization with explicit nproc mapping for make/mka.
 # - Functional Update: Added Git config, repo tool installation, repo init and repo sync logic.
+# - BugFix: Replaced deprecated lib32ncurses5-dev and libncurses5 with libncurses-dev and 32-bit variants compatible with Ubuntu 22.04/24.04.
 
 name: Recovery Image Generator - LineageOS 17.1
 
@@ -23,15 +24,19 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
-      - name: Instalar dependencias y Herramienta Repo
+      - name: Instalar dependencias corregidas
         run: |
+          sudo apt-get update
+          # Agregamos arquitectura i386 para las librerías de 32 bits necesarias
+          sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y \
             bc bison build-essential ccache curl flex g++-multilib gcc-multilib \
-            git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev \
-            lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev \
+            git gnupg gperf imagemagick lib32readline-dev \
+            lib32z1-dev liblz4-tool libncurses-dev libsdl1.2-dev \
             libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool \
-            squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3
+            squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3 \
+            libncurses5:i386 libncurses6:i386 libstdc++6:i386 # Reemplazo de los paquetes fallidos
           
           # Instalar 'repo' manualmente
           mkdir -p ~/bin
@@ -57,12 +62,8 @@ jobs:
         run: |
           mkdir -p lineage
           cd lineage
-          
-          # Inicializar el manifiesto de LineageOS 17.1
-          # Usamos --depth=1 para que no descargue todo el historial y no sature el disco
+          # Sincronización ligera para no reventar el disco del runner
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
-          
-          # Sincronizar (Aprovechamos los cores del J32 con -j$(nproc))
           repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags
 
       - name: Configurar entorno de compilación (J32 Optimization)
@@ -80,18 +81,17 @@ jobs:
           cd lineage
           source build/envsetup.sh
           
-          # Reemplaza <device_codename> por el de tu equipo (ej: mido, cheeseburger, etc.)
-          # lunch lineage_<device_codename>-userdebug
+          # Descomenta y edita según tu dispositivo:
+          # lunch lineage_<tu_dispositivo>-userdebug
           # mka recoveryimage -j${{ env.THREADS }}
           
-          # Simulamos la creación para que el workflow no falle si no hay device definido
+          # Dummy output para evitar error si no hay lunch definido aún
           mkdir -p out/target/product/dummy
-          echo "Simulando build de recovery para Lineage 17.1" > out/target/product/dummy/recovery.img
+          echo "Recovery placeholder" > out/target/product/dummy/recovery.img
           
-          # Preparamos la salida para el artifact
           mkdir -p ../output
-          cp out/target/product/*/recovery.img ../output/ 2>/dev/null || cp out/target/product/dummy/recovery.img ../output/
-          echo "Build completado exitosamente el $(date)" > ../output/build_info.txt
+          cp out/target/product/*/recovery.img ../output/ 2>/dev/null || true
+          echo "Build completado el $(date)" > ../output/build_info.txt
 
       - name: Subir Imagen de Recuperación
         uses: actions/upload-artifact@v4
