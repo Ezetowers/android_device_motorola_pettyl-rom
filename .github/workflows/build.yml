@@ -1,8 +1,8 @@
-# Version: 7
+# Version: 8
 # Changelog:
-# - Se corrigió la lógica de clonación: ahora descarga el repo unificado y mueve las carpetas pettyl y vendor_pettyl a sus respectivas rutas.
-# - Se añadió un sistema "Anti-Rojo".
-# - NUEVO: Generación automática de Tags y subida a "Releases" de GitHub.
+# - Se eliminó el "Anti-Rojo" para dejar que GitHub muestre los errores reales.
+# - Se añadió un registro de logs (build_log.txt).
+# - Se configuró la subida de artefactos para que rescate imágenes y logs INCLUSO SI FALLA.
 
 name: Build LineageOS 17.1 for pettyl
 
@@ -18,7 +18,7 @@ jobs:
       - name: Checkout del repositorio actual
         uses: actions/checkout@v4
 
-      - name: Limpieza BRUTAL de espacio en disco (Estilo Linux Void)
+      - name: Limpieza BRUTAL de espacio en disco
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: true
@@ -53,98 +53,61 @@ jobs:
           git config --global user.email "bot@github.com"
           git config --global user.name "GitHub Actions Bot"
 
-      - name: Comprobar espacio en disco ANTES de repo init
-        run: |
-          echo "=== ESPACIO EN DISCO ANTES DE DESCARGAR EL CÓDIGO ==="
-          df -h
-
-      - name: Sincronizar LineageOS (Modo ultra ligero con control de errores)
+      - name: Sincronizar LineageOS
         run: |
           mkdir -p /home/runner/android/lineage
           cd /home/runner/android/lineage
-          repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1 || true
-          
-          echo "Iniciando repo sync..."
-          if ! repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet; then
-            echo "⚠️ ERROR: El repo sync falló (probablemente por espacio o tiempo)."
-            echo "Calculando cuánto se logró descargar..."
-            du -sh /home/runner/android/lineage
-            echo "=== ESPACIO EN DISCO ACTUAL ==="
-            df -h
-            echo "Saliendo con código de éxito para mantener en verde y saltar siguientes pasos..."
-            echo "SKIP_REMAINING=true" >> $GITHUB_ENV
-            exit 0
-          fi
+          repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet
 
       - name: Clonar y organizar repositorios de pettyl y vendor
-        if: env.SKIP_REMAINING != 'true'
         run: |
           cd /home/runner/android/lineage
-          
-          # Clonar el repositorio completo en una carpeta temporal
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
-          
-          # Crear las rutas destino
           mkdir -p device/motorola/pettyl
           mkdir -p vendor/motorola/pettyl
-          
-          # Mover el contenido de las subcarpetas a su lugar final
           cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
           cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
-          
-          # Limpiar la basura temporal
           rm -rf /tmp/pettyl_unified
 
       - name: TRUCO Eliminar repo oculto para liberar espacio vital
-        if: env.SKIP_REMAINING != 'true'
         run: |
           echo "Eliminando la carpeta .repo para recuperar espacio..."
           rm -rf /home/runner/android/lineage/.repo
-          echo "=== ESPACIO EN DISCO DESPUÉS DE BORRAR .REPO ==="
           df -h
 
-      - name: Compilar LineageOS (con control de errores)
-        if: env.SKIP_REMAINING != 'true'
+      - name: Compilar LineageOS (Mostrará el error real si falla)
         run: |
           cd /home/runner/android/lineage
           export USE_CCACHE=0
           export CCACHE_DISABLE=1
-          
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
           
-          echo "Iniciando compilación (mka bacon)..."
-          if ! mka bacon -j$(nproc --all); then
-            echo "⚠️ ERROR: La compilación falló."
-            echo "Calculando cuánto pesa la carpeta de código y compilación actual..."
-            du -sh /home/runner/android/lineage
-            echo "=== ESPACIO EN DISCO ACTUAL ==="
-            df -h
-            echo "Saliendo con código de éxito para mantener en verde..."
-            echo "SKIP_REMAINING=true" >> $GITHUB_ENV
-            exit 0
-          fi
+          # El comando tee guarda un log de todo lo que sale en pantalla
+          mka bacon -j$(nproc --all) | tee build_log.txt
 
-      - name: Subir ROM como Artefacto (Respaldo temporal)
-        if: env.SKIP_REMAINING != 'true'
+      - name: Rescatar Logs e Imágenes (Se ejecuta aunque falle)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LineageOS-17.1-pettyl-Build
-          path: '/home/runner/android/lineage/out/target/product/pettyl/lineage-*.zip'
-          retention-days: 7
+          name: Archivos-Rescatados-Pettyl
+          path: |
+            /home/runner/android/lineage/build_log.txt
+            /home/runner/android/lineage/out/target/product/pettyl/*.img
+            /home/runner/android/lineage/out/target/product/pettyl/*.zip
+          retention-days: 5
 
       - name: Preparar fecha para la Release
-        if: env.SKIP_REMAINING != 'true'
         run: echo "FECHA=$(date +'%Y%m%d_%H%M')" >> $GITHUB_ENV
 
       - name: Crear Release y Subir ROM a GitHub
         uses: softprops/action-gh-release@v2
-        if: env.SKIP_REMAINING != 'true'
         with:
           tag_name: LOS-17.1-${{ env.FECHA }}
           name: "LineageOS 17.1 - Moto E5 Play (pettyl) 🚀"
           body: |
-            ### Compilación Automática Exitosa
+            ### Compilación Automática
             - **Dispositivo:** Motorola Moto E5 Play (pettyl)
             - **Android:** 10 (LineageOS 17.1)
             - **Fecha:** ${{ env.FECHA }}
