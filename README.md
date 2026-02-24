@@ -25,7 +25,7 @@ This repository contains the device configuration and sources for the **Motorola
 To build LineageOS 17.1 for this device, you need to set up your workspace as follows:
 
 * Device Tree: device/motorola/pettyl
-* Vendor Tree: vendor/motorola/vendor_pettyl
+* Vendor Tree: vendor/motorola/pettyl
 
 ## How to Build
 
@@ -69,7 +69,7 @@ Este repositorio contiene la configuración del dispositivo y las fuentes para e
 Para compilar LineageOS 17.1 para este dispositivo, debes configurar tu espacio de trabajo de la siguiente manera:
 
 * Device Tree: device/motorola/pettyl
-* Vendor Tree: vendor/motorola/vendor_pettyl
+* Vendor Tree: vendor/motorola/pettyl
 
 ## Cómo Compilar
 
