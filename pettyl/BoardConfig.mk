@@ -55,6 +55,8 @@ TARGET_BOARD_PLATFORM := msm8937
 # Properties
 TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
 TARGET_VENDOR_PROP += $(DEVICE_PATH)/vendor.prop
+# Audio
+USE_XML_AUDIO_POLICY_CONF := 1
 
 # Recovery
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
