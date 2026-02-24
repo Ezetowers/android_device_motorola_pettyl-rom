@@ -1,8 +1,9 @@
-# Version: 8
+# Version: 9
 # Changelog:
 # - Se eliminó el "Anti-Rojo" para dejar que GitHub muestre los errores reales.
 # - Se añadió un registro de logs (build_log.txt).
 # - Se configuró la subida de artefactos para que rescate imágenes y logs INCLUSO SI FALLA.
+# - Se reemplazó la creación de Release por la generación automática de un Issue si la build falla.
 
 name: Build LineageOS 17.1 for pettyl
 
@@ -98,19 +99,33 @@ jobs:
             /home/runner/android/lineage/out/target/product/pettyl/*.zip
           retention-days: 5
 
-      - name: Preparar fecha para la Release
-        run: echo "FECHA=$(date +'%Y%m%d_%H%M')" >> $GITHUB_ENV
-
-      - name: Crear Release y Subir ROM a GitHub
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: LOS-17.1-${{ env.FECHA }}
-          name: "LineageOS 17.1 - Moto E5 Play (pettyl) 🚀"
-          body: |
-            ### Compilación Automática
-            - **Dispositivo:** Motorola Moto E5 Play (pettyl)
-            - **Android:** 10 (LineageOS 17.1)
-            - **Fecha:** ${{ env.FECHA }}
-          files: /home/runner/android/lineage/out/target/product/pettyl/lineage-*.zip
+      - name: Crear Issue si la compilación falla
+        if: failure()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Generando reporte de error..."
+          
+          # Extraemos las últimas 200 líneas del log
+          tail -n 200 /home/runner/android/lineage/build_log.txt > error_snippet.txt
+          
+          # Creamos el cuerpo del Issue usando formato Markdown
+          cat << 'EOF' > issue_body.md
+          ## 🚨 La compilación de LineageOS ha fallado
+          
+          La ejecución del workflow no pudo terminar la ROM. Revisa los artefactos subidos para descargar el archivo `build_log.txt` completo.
+          
+          ### Últimas 200 líneas del log:
+          ```text
+          EOF
+          
+          cat error_snippet.txt >> issue_body.md
+          echo '```' >> issue_body.md
+          
+          # Generar una fecha para el título
+          FECHA=$(date +'%Y-%m-%d %H:%M')
+          
+          # Crear el issue usando GitHub CLI
+          gh issue create \
+            --title "🚨 Build Failed: Release Cannot Be Created ($FECHA)" \
+            --body-file issue_body.md
