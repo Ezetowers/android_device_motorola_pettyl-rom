@@ -1,7 +1,8 @@
-# Version: 6
+# Version: 7
 # Changelog:
 # - Se corrigió la lógica de clonación: ahora descarga el repo unificado y mueve las carpetas pettyl y vendor_pettyl a sus respectivas rutas.
-# - Se añadió un sistema "Anti-Rojo": Si repo sync o la compilación fallan, calculan el peso, avisan y salen con código de éxito (verde) saltando los siguientes pasos.
+# - Se añadió un sistema "Anti-Rojo".
+# - NUEVO: Generación automática de Tags y subida a "Releases" de GitHub.
 
 name: Build LineageOS 17.1 for pettyl
 
@@ -124,10 +125,29 @@ jobs:
             exit 0
           fi
 
-      - name: Subir ROM
+      - name: Subir ROM como Artefacto (Respaldo temporal)
         if: env.SKIP_REMAINING != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: LineageOS-17.1-pettyl-Build
           path: '/home/runner/android/lineage/out/target/product/pettyl/lineage-*.zip'
           retention-days: 7
+
+      - name: Preparar fecha para la Release
+        if: env.SKIP_REMAINING != 'true'
+        run: echo "FECHA=$(date +'%Y%m%d_%H%M')" >> $GITHUB_ENV
+
+      - name: Crear Release y Subir ROM a GitHub
+        uses: softprops/action-gh-release@v2
+        if: env.SKIP_REMAINING != 'true'
+        with:
+          tag_name: LOS-17.1-${{ env.FECHA }}
+          name: "LineageOS 17.1 - Moto E5 Play (pettyl) 🚀"
+          body: |
+            ### Compilación Automática Exitosa
+            - **Dispositivo:** Motorola Moto E5 Play (pettyl)
+            - **Android:** 10 (LineageOS 17.1)
+            - **Fecha:** ${{ env.FECHA }}
+          files: /home/runner/android/lineage/out/target/product/pettyl/lineage-*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
