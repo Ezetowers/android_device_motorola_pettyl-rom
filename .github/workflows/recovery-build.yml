@@ -1,4 +1,4 @@
-# Version: 4
+# Version: 5
 # Dependencies: actions/checkout@v4, actions/upload-artifact@v4, actions/cache@v4
 # Changelog:
 # - Initial version: Setup basic workflow for recovery image generation.
@@ -7,7 +7,7 @@
 # - Update: Implemented ccache support to speed up subsequent builds.
 # - Update: Refined J32 core utilization with explicit nproc mapping for make/mka.
 # - Functional Update: Added Git config, repo tool installation, repo init and repo sync logic.
-# - BugFix: Replaced deprecated lib32ncurses5-dev and libncurses5 with libncurses-dev and 32-bit variants compatible with Ubuntu 22.04/24.04.
+# - BugFix: Fixed libncurses5:i386 issue on Ubuntu 22.04 by adding 'universe' repo and multiarch support correctly.
 
 name: Recovery Image Generator - LineageOS 17.1
 
@@ -18,25 +18,27 @@ on:
 
 jobs:
   build-recovery:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
-      - name: Instalar dependencias corregidas
+      - name: Instalar dependencias corregidas para Ubuntu 22.04
         run: |
-          sudo apt-get update
-          # Agregamos arquitectura i386 para las librerías de 32 bits necesarias
           sudo dpkg --add-architecture i386
+          # Agregamos el repo universe para encontrar paquetes legacy
+          sudo add-apt-repository universe
           sudo apt-get update
+          
+          # Instalamos las dependencias con los nombres exactos de 22.04
           sudo apt-get install -y \
             bc bison build-essential ccache curl flex g++-multilib gcc-multilib \
             git gnupg gperf imagemagick lib32readline-dev \
-            lib32z1-dev liblz4-tool libncurses-dev libsdl1.2-dev \
+            lib32z1-dev liblz4-tool libncurses5-dev libncurses5:i386 libsdl1.2-dev \
             libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool \
             squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3 \
-            libncurses5:i386 libncurses6:i386 libstdc++6:i386 # Reemplazo de los paquetes fallidos
+            libstdc++6:i386 libncurses6:i386
           
           # Instalar 'repo' manualmente
           mkdir -p ~/bin
@@ -62,7 +64,7 @@ jobs:
         run: |
           mkdir -p lineage
           cd lineage
-          # Sincronización ligera para no reventar el disco del runner
+          # Sincronización ligera (depth=1) para evitar llenar el disco del runner
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
           repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags
 
@@ -81,16 +83,17 @@ jobs:
           cd lineage
           source build/envsetup.sh
           
-          # Descomenta y edita según tu dispositivo:
+          # Descomenta y edita según tu dispositivo real:
           # lunch lineage_<tu_dispositivo>-userdebug
           # mka recoveryimage -j${{ env.THREADS }}
           
-          # Dummy output para evitar error si no hay lunch definido aún
+          # Dummy output para evitar que el job falle mientras pruebas la infraestructura
           mkdir -p out/target/product/dummy
           echo "Recovery placeholder" > out/target/product/dummy/recovery.img
           
           mkdir -p ../output
-          cp out/target/product/*/recovery.img ../output/ 2>/dev/null || true
+          # Copia recursiva buscando el recovery generado
+          find out/target/product/ -name "recovery.img" -exec cp {} ../output/ \; 2>/dev/null || true
           echo "Build completado el $(date)" > ../output/build_info.txt
 
       - name: Subir Imagen de Recuperación
