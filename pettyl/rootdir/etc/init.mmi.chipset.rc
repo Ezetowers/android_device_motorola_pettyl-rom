@@ -22,7 +22,7 @@ on init
 service fingerprintd /system/bin/fingerprintd
     class late_start
     user system
-    group fingerprint
+    group system
 
 service emmc_ffu /system/bin/emmc_ffu.sh
     user root
