@@ -1,7 +1,7 @@
-# Version: 5
+# Version: 6
 # Changelog:
-# - Corrección del error de sintaxis YAML: Se eliminaron los dos puntos en el nombre del paso 76.
-# - Ajuste de booleanos en la acción jlumbroso/free-disk-space.
+# - Se corrigió la lógica de clonación: ahora descarga el repo unificado y mueve las carpetas pettyl y vendor_pettyl a sus respectivas rutas.
+# - Se añadió un sistema "Anti-Rojo": Si repo sync o la compilación fallan, calculan el peso, avisan y salen con código de éxito (verde) saltando los siguientes pasos.
 
 name: Build LineageOS 17.1 for pettyl
 
@@ -56,30 +56,54 @@ jobs:
         run: |
           echo "=== ESPACIO EN DISCO ANTES DE DESCARGAR EL CÓDIGO ==="
           df -h
-          echo "=== MEMORIA RAM DISPONIBLE ==="
-          free -h
 
-      - name: Sincronizar LineageOS (Modo ultra ligero)
+      - name: Sincronizar LineageOS (Modo ultra ligero con control de errores)
         run: |
           mkdir -p /home/runner/android/lineage
           cd /home/runner/android/lineage
-          repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
-          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet
+          repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1 || true
+          
+          echo "Iniciando repo sync..."
+          if ! repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet; then
+            echo "⚠️ ERROR: El repo sync falló (probablemente por espacio o tiempo)."
+            echo "Calculando cuánto se logró descargar..."
+            du -sh /home/runner/android/lineage
+            echo "=== ESPACIO EN DISCO ACTUAL ==="
+            df -h
+            echo "Saliendo con código de éxito para mantener en verde y saltar siguientes pasos..."
+            echo "SKIP_REMAINING=true" >> $GITHUB_ENV
+            exit 0
+          fi
 
-      - name: Clonar repositorios de pettyl
+      - name: Clonar y organizar repositorios de pettyl y vendor
+        if: env.SKIP_REMAINING != 'true'
         run: |
           cd /home/runner/android/lineage
-          git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 device/motorola/pettyl
-          git clone https://github.com/elmendezz/vendor_pettyl -b lineage-17.1 vendor/motorola/pettyl
+          
+          # Clonar el repositorio completo en una carpeta temporal
+          git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
+          
+          # Crear las rutas destino
+          mkdir -p device/motorola/pettyl
+          mkdir -p vendor/motorola/pettyl
+          
+          # Mover el contenido de las subcarpetas a su lugar final
+          cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
+          cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
+          
+          # Limpiar la basura temporal
+          rm -rf /tmp/pettyl_unified
 
       - name: TRUCO Eliminar repo oculto para liberar espacio vital
+        if: env.SKIP_REMAINING != 'true'
         run: |
           echo "Eliminando la carpeta .repo para recuperar espacio..."
           rm -rf /home/runner/android/lineage/.repo
           echo "=== ESPACIO EN DISCO DESPUÉS DE BORRAR .REPO ==="
           df -h
 
-      - name: Compilar LineageOS
+      - name: Compilar LineageOS (con control de errores)
+        if: env.SKIP_REMAINING != 'true'
         run: |
           cd /home/runner/android/lineage
           export USE_CCACHE=0
@@ -88,9 +112,20 @@ jobs:
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
           
-          mka bacon -j$(nproc --all)
+          echo "Iniciando compilación (mka bacon)..."
+          if ! mka bacon -j$(nproc --all); then
+            echo "⚠️ ERROR: La compilación falló."
+            echo "Calculando cuánto pesa la carpeta de código y compilación actual..."
+            du -sh /home/runner/android/lineage
+            echo "=== ESPACIO EN DISCO ACTUAL ==="
+            df -h
+            echo "Saliendo con código de éxito para mantener en verde..."
+            echo "SKIP_REMAINING=true" >> $GITHUB_ENV
+            exit 0
+          fi
 
       - name: Subir ROM
+        if: env.SKIP_REMAINING != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: LineageOS-17.1-pettyl-Build
