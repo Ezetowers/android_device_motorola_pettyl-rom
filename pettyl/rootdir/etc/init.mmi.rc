@@ -224,9 +224,9 @@ on post-fs-data
     mkdir /data/vendor/nfc 0770 nfc nfc
 
     # Enable directory writer xattr for 2nd level directory /storage/emulated/xx/yy
-    setfattr /data/media user.dwriter /%s/%s 0
+   # setfattr /data/media user.dwriter /%s/%s 0
     # Enable relatime for /storage/emulated/xx/Download
-    setfattr /data/media user.relatime /%s/Download:com.motorola.mya 0
+  #  setfattr /data/media user.relatime /%s/Download:com.motorola.mya 0
 
 on boot
    # restore default console_loglevel to KERN_DEBUG
@@ -283,10 +283,10 @@ on nonencrypted
 on property:vold.decrypt=trigger_restart_framework
     setprop ro.kick.logcopy ${ro.bootreason}
 
-service pstore_annotate /vendor/bin/pstore_annotate.sh build
-    class main
-    group log
-    oneshot
+#service pstore_annotate /vendor/bin/pstore_annotate.sh build
+ #   class main
+ #   group log
+ #   oneshot
 
 service apanic_copy /vendor/bin/apanic_copy.sh
     class late_start
