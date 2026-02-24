@@ -1,11 +1,9 @@
-# Version:3
+# Version: 4
 # Changelog:
-# - Versión 1: Creación del flujo de trabajo CI inicial para compilar LineageOS 17.1 para el dispositivo pettyl.
-# - Versión 1: Integración de la acción 'maximize-build-space' para evitar errores de almacenamiento.
-# - Versión 2: Actualización a ubuntu-22.04 y upload-artifact@v4 por depreciación.
-# - Versión 3: Ajuste agresivo de limpieza de espacio para evitar "No space left on device".
-# - Versión 3: Optimización de repo sync con --no-tags y --force-sync para reducir el tamaño del árbol de fuentes.
-# - Versión 3: Eliminación de archivos innecesarios de Azure y paquetes sobrantes antes de iniciar el proceso.
+# - Versión 4: Cambio a jlumbroso/free-disk-space para limpieza extrema ("Tipo Void Linux").
+# - Versión 4: Se añade comprobación de disco (df -h) antes del repo init.
+# - Versión 4: TRUCO EXTREMO - Eliminación de la carpeta .repo después de clonar para recuperar ~30GB.
+# - Versión 4: Desactivación de CCACHE para evitar que los archivos cacheados saturen el disco.
 
 name: Build LineageOS 17.1 for pettyl
 
@@ -21,16 +19,22 @@ jobs:
       - name: Checkout del repositorio actual
         uses: actions/checkout@v4
 
-      - name: Limpieza agresiva de espacio en disco
-        uses: easimon/maximize-build-space@master
+      - name: Limpieza BRUTAL de espacio en disco (Estilo Linux Void)
+        uses: jlumbroso/free-disk-space@main
         with:
-          root-reserve-mb: 2048 # Bajamos la reserva para darle más a la ROM
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true' # Borramos imágenes de Docker para ganar más GB
+          tool-cache: true
+          android: true # Borra el SDK preinstalado que no necesitamos para compilar la ROM
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Purgar paquetes innecesarios manualmente
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d/*
+          sudo docker system prune -af
 
       - name: Instalar dependencias del sistema
         run: |
@@ -50,11 +54,18 @@ jobs:
           git config --global user.email "bot@github.com"
           git config --global user.name "GitHub Actions Bot"
 
+      - name: Comprobar espacio en disco ANTES de repo init
+        run: |
+          echo "=== ESPACIO EN DISCO ANTES DE DESCARGAR EL CÓDIGO ==="
+          df -h
+          echo "=== MEMORIA RAM DISPONIBLE ==="
+          free -h
+
       - name: Sincronizar LineageOS (Modo ultra ligero)
         run: |
           mkdir -p ~/android/lineage
           cd ~/android/lineage
-          # Agregamos --depth=1 y quitamos tags para ahorrar el máximo espacio posible
+          # Profundidad 1 y sin clones extra
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet
 
@@ -64,11 +75,23 @@ jobs:
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 device/motorola/pettyl
           git clone https://github.com/elmendezz/vendor_pettyl -b lineage-17.1 vendor/motorola/pettyl
 
+      - name: TRUCO: Eliminar .repo para liberar espacio vital
+        run: |
+          echo "Eliminando la carpeta .repo para liberar unos ~30GB de espacio..."
+          rm -rf ~/android/lineage/.repo
+          echo "=== ESPACIO EN DISCO DESPUÉS DE BORRAR .REPO ==="
+          df -h
+
       - name: Compilar LineageOS
         run: |
           cd ~/android/lineage
+          # Desactivar ccache estrictamente para no gastar disco extra
+          export USE_CCACHE=0
+          export CCACHE_DISABLE=1
+          
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
+          
           # mka bacon genera el ZIP flasheable
           mka bacon -j$(nproc --all)
 
