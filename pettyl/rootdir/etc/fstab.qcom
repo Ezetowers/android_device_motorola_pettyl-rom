@@ -1,7 +1,18 @@
-/dev/block/bootdevice/by-name/userdata       /data         f2fs     rw,discard,nosuid,nodev,noatime,nodiratime,nobarrier,inline_xattr,inline_data     wait,check,formattable,=/dev/block/bootdevice/by-name/metadata
-/dev/block/bootdevice/by-name/misc           /misc         emmc     defaults             defaults
-/devices/soc/7864900.sdhci/mmc_host*         auto          auto     nosuid,nodev            wait,voldmanaged=sdcard1:auto,encryptable=userdata
-/dev/block/bootdevice/by-name/cache          /cache        ext4     rw,noatime,nosuid,nodev,barrier=1,data=ordered        wait,check,formattable
-/devices/soc/78db000.usb/msm_hsusb_host*     auto          auto     defaults             voldmanaged=usb:auto
-/dev/block/bootdevice/by-name/modem          /firmware     ext4     ro,nosuid,nodev,context=u:object_r:firmware_file:s0          wait
-/dev/block/bootdevice/by-name/dsp            /dsp          ext4     ro,nosuid,nodev,barrier=1,defcontext=u:object_r:adsprpcd_file:s0         wait
+# Version: 3
+# Changelog:
+# - Se integraron /system y /vendor basados en el dump real del dispositivo.
+# - Se añadieron flags 'discard' y 'relatime' detectados en el montaje actual.
+# - Se eliminó 'slotselect' ya que es un esquema de partición única (p55/p53).
+
+# <src>                                      <mnt_point>  <type>   <mnt_flags and options>                            <fs_mgr_flags>
+/dev/block/bootdevice/by-name/system         /system      ext4     ro,relatime,discard,barrier=1                       wait
+/dev/block/bootdevice/by-name/vendor         /vendor      ext4     ro,relatime,discard,barrier=1                       wait
+/dev/block/bootdevice/by-name/userdata       /data        f2fs     rw,discard,nosuid,nodev,noatime,nodiratime,nobarrier,inline_xattr,inline_data    wait,check,formattable,fileencryption=ice,quota
+/dev/block/bootdevice/by-name/misc           /misc        emmc     defaults                                            defaults
+/dev/block/bootdevice/by-name/cache          /cache       ext4     rw,noatime,nosuid,nodev,barrier=1,data=ordered      wait,check,formattable
+/dev/block/bootdevice/by-name/modem          /firmware    ext4     ro,nosuid,nodev,context=u:object_r:firmware_file:s0 wait
+/dev/block/bootdevice/by-name/dsp            /dsp         ext4     ro,nosuid,nodev,barrier=1,defcontext=u:object_r:adsprpcd_file:s0 wait
+
+# Removibles
+/devices/soc/7864900.sdhci/mmc_host* auto         auto     nosuid,nodev                                        wait,voldmanaged=sdcard1:auto,encryptable=userdata
+/devices/soc/78db000.usb/msm_hsusb_host* auto         auto     defaults                                            voldmanaged=usb:auto
