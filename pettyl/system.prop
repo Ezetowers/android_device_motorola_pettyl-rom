@@ -1,3 +1,14 @@
+# Version: 2
+# Changelog:
+# - Se añadieron propiedades de identidad (ro.product.device, ro.build.product) para evitar errores en ota_from_target_files.
+# - Se mantuvo toda la configuración original de audio, display y radio.
+
+# Identity & Build
+ro.product.device=pettyl
+ro.build.product=pettyl
+ro.product.model=moto e5 play
+ro.product.name=lineage_pettyl
+
 # Audio
 audio.deep_buffer.media=true
 audio.dolby.ds2.enabled=true
@@ -132,4 +143,3 @@ voice.conc.fallbackpath=deep-buffer
 voice.playback.conc.disabled=true
 voice.record.conc.disabled=false
 voice.voip.conc.disabled=true
-
