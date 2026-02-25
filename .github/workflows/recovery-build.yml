@@ -1,104 +1,120 @@
-# Version: 5
-# Dependencies: actions/checkout@v4, actions/upload-artifact@v4, actions/cache@v4
+# Version: 10 - Optimized for pettyl Recovery
 # Changelog:
-# - Initial version: Setup basic workflow for recovery image generation.
-# - Optimization: Configured for high-performance J32 runners using parallel jobs.
-# - Update: Added specific dependencies for LineageOS 17.1 (Android 10).
-# - Update: Implemented ccache support to speed up subsequent builds.
-# - Update: Refined J32 core utilization with explicit nproc mapping for make/mka.
-# - Functional Update: Added Git config, repo tool installation, repo init and repo sync logic.
-# - BugFix: Fixed libncurses5:i386 issue on Ubuntu 22.04 by adding 'universe' repo and multiarch support correctly.
+# - Fusion de dependencias Ubuntu 22.04 (v5) con lógica de limpieza pettyl (v9).
+# - Objetivo cambiado de 'bacon' (ROM completa) a 'recoveryimage' para ahorrar tiempo y espacio.
+# - Mantiene la creación de Issue en caso de fallo y rescate de logs.
 
-name: Recovery Image Generator - LineageOS 17.1
+name: Build Recovery LineageOS 17.1 - pettyl
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
-  build-recovery:
+  build:
+    name: Compilar Recovery
     runs-on: ubuntu-22.04
-    
+
     steps:
-      - name: Checkout del repositorio
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Instalar dependencias corregidas para Ubuntu 22.04
+      - name: Maximizar espacio en disco
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          large-packages: true
+          docker-images: true
+
+      - name: Instalar dependencias (Fix Ubuntu 22.04)
         run: |
           sudo dpkg --add-architecture i386
-          # Agregamos el repo universe para encontrar paquetes legacy
           sudo add-apt-repository universe
           sudo apt-get update
-          
-          # Instalamos las dependencias con los nombres exactos de 22.04
           sudo apt-get install -y \
             bc bison build-essential ccache curl flex g++-multilib gcc-multilib \
             git gnupg gperf imagemagick lib32readline-dev \
             lib32z1-dev liblz4-tool libncurses5-dev libncurses5:i386 libsdl1.2-dev \
-            libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool \
+            libssl-dev libxml2 libxml2-utils lzop pngcrush rsync micro schedtool \
             squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3 \
             libstdc++6:i386 libncurses6:i386
-          
-          # Instalar 'repo' manualmente
+
+      - name: Instalar Herramienta Repo
+        run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          echo "$HOME/bin" >> $GITHUB_PATH
+          sudo ln -sf ~/bin/repo /usr/local/bin/repo
 
-      - name: Configurar Git (Requerido para Repo)
+      - name: Configurar Git
         run: |
-          git config --global user.email "papi.mendez@example.com"
-          git config --global user.name "Papi Mendez"
+          git config --global user.email "bot@github.com"
+          git config --global user.name "GitHub Actions Bot"
           git config --global color.ui false
 
-      - name: Configurar ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-ccache-lineage-17.1-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-ccache-lineage-17.1-
-
-      - name: Inicializar y Sincronizar Código Fuente
+      - name: Sincronizar Fuentes (LineageOS 17.1)
         run: |
-          mkdir -p lineage
-          cd lineage
-          # Sincronización ligera (depth=1) para evitar llenar el disco del runner
+          mkdir -p android/lineage
+          cd android/lineage
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
-          repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags
+          repo sync -c -j$(nproc) --force-sync --no-clone-bundle --no-tags --quiet
 
-      - name: Configurar entorno de compilación (J32 Optimization)
+      - name: Clonar Árbol de Dispositivo (pettyl)
         run: |
-          echo "Optimizando para runner de alto rendimiento..."
-          THREADS=$(nproc)
-          echo "THREADS=$THREADS" >> $GITHUB_ENV
-          export USE_CCACHE=1
-          export CCACHE_EXEC=/usr/bin/ccache
-          ccache -M 10G
-          echo "Usando $THREADS núcleos para la compilación."
+          cd android/lineage
+          # Clonamos el repo unificado en temporal
+          git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
+          
+          # Estructura correcta para Lineage
+          mkdir -p device/motorola/pettyl
+          mkdir -p vendor/motorola/pettyl
+          
+          # Mover archivos desde el repo unificado
+          cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
+          cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
+          rm -rf /tmp/pettyl_unified
 
-      - name: Generar Imagen de Recuperación
+      - name: Liberar espacio (.repo)
+        run: rm -rf android/lineage/.repo
+
+      - name: Compilar Recovery Image
         run: |
-          cd lineage
+          cd android/lineage
+          export USE_CCACHE=0
           source build/envsetup.sh
+          lunch lineage_pettyl-userdebug
           
-          # Descomenta y edita según tu dispositivo real:
-          # lunch lineage_<tu_dispositivo>-userdebug
-          # mka recoveryimage -j${{ env.THREADS }}
-          
-          # Dummy output para evitar que el job falle mientras pruebas la infraestructura
-          mkdir -p out/target/product/dummy
-          echo "Recovery placeholder" > out/target/product/dummy/recovery.img
-          
-          mkdir -p ../output
-          # Copia recursiva buscando el recovery generado
-          find out/target/product/ -name "recovery.img" -exec cp {} ../output/ \; 2>/dev/null || true
-          echo "Build completado el $(date)" > ../output/build_info.txt
+          # Compilar específicamente el recovery
+          mka recoveryimage -j$(nproc) 2>&1 | tee build_log.txt
 
-      - name: Subir Imagen de Recuperación
+      - name: Subir Resultados (Logs e Imágenes)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: recovery-image-lineage-17.1
-          path: output/
-          retention-days: 7
+          name: Recovery-Pettyl-Output
+          path: |
+            android/lineage/build_log.txt
+            android/lineage/out/target/product/pettyl/recovery.img
+          retention-days: 5
+
+      - name: Reportar error en Issue
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tail -n 200 android/lineage/build_log.txt > error_snippet.txt
+          
+          cat << 'EOF' > issue_body.md
+          ## 🚨 Error en Compilación de Recovery (pettyl)
+          La build falló. Revisa los artefactos para el log completo.
+          
+          ### Últimas líneas:
+          ```text
+          EOF
+          cat error_snippet.txt >> issue_body.md
+          echo '```' >> issue_body.md
+          
+          gh issue create \
+            --title "Build Failed: $(date +'%Y-%m-%d %H:%M')" \
+            --body-file issue_body.md
