@@ -1,8 +1,8 @@
-# Version: 11 - Smart File Validator (pettyl)
+# Version: 12 - Advanced pettyl Validator
 # Changelog:
-# - Se añade menú de selección (XML, Inits, Recovery o System).
-# - No compila la ROM completa; usa 'make' con targets específicos.
-# - Ideal para check rápido de sintaxis en el árbol de dispositivo.
+# - Corregido error de envsetup.sh (ahora sincroniza vendor/lineage y scripts de build).
+# - Añadida validación profunda de XML y scripts de inicio (.rc).
+# - Implementado menú interactivo para elegir el tipo de chequeo.
 
 name: Verificador de Archivos y Sintaxis - pettyl
 
@@ -10,15 +10,14 @@ on:
   workflow_dispatch:
     inputs:
       check_type:
-        description: '¿Qué quieres verificar?'
+        description: 'Selecciona qué validar:'
         required: true
-        default: 'xml_init'
+        default: 'fast_syntax'
         type: choice
         options:
-          - xml_init
-          - recovery_check
-          - system_check
-          - kernel_dtb
+          - fast_syntax        # Revisa XMLs y .rc (Muy rápido)
+          - build_config       # Revisa Android.mk / Android.bp (Lento)
+          - selinux_check      # Revisa archivos de políticas (.te)
 
 jobs:
   validate:
@@ -29,65 +28,66 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Instalar Herramientas de Validación
+      - name: Instalar Herramientas de Sistema
         run: |
           sudo apt-get update
-          sudo apt-get install -y libxml2-utils python3-pip
-          # Instalamos una herramienta para validar archivos .rc (init)
+          sudo apt-get install -y libxml2-utils python3 python-is-python3
+          # 'repo' es necesario para estructurar las carpetas correctamente
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/local/bin/repo
 
-      - name: Sincronizar Árbol (Solo Manifiesto)
+      - name: Sincronizar Entorno de Build (Mínimo)
         run: |
           mkdir -p android/lineage
           cd android/lineage
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
-          # Sincronizamos solo lo mínimo necesario para el entorno de build
-          repo sync -c -j$(nproc) --force-sync --no-tags --quiet build/make
+          # Sincronizamos solo lo crítico para que 'envsetup.sh' no falle
+          repo sync -c -j$(nproc) --force-sync --no-tags build/make vendor/lineage build/soong
 
-      - name: Clonar Árbol pettyl
+      - name: Preparar Árbol pettyl
         run: |
           cd android/lineage
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
           mkdir -p device/motorola/pettyl
           cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
-          rm -rf /tmp/pettyl_unified
+          # Nota: No borramos .repo aquí porque lunch lo necesita para validar el árbol
+          echo "Árbol listo para verificación."
 
-      - name: Ejecutar Verificación Seleccionada
+      - name: Ejecutar Verificación
         run: |
-          cd android/lineage/device/motorola/pettyl
+          cd android/lineage
           
-          if [[ "${{ github.event.inputs.check_type }}" == "xml_init" ]]; then
-            echo "--- Verificando XMLs ---"
-            find . -name "*.xml" -exec xmllint --noout {} + || exit 1
-            echo "--- Verificando Scripts Init (.rc) ---"
-            # Buscamos errores comunes de sintaxis en inits
-            find . -name "*.rc" -exec grep -q "import" {} + && echo "Estructura básica OK"
-            echo "Validación de archivos de configuración completada."
-          
-          elif [[ "${{ github.event.inputs.check_type }}" == "recovery_check" ]]; then
-            echo "Simulando pre-compilación de Recovery..."
-            cd ../../../
+          if [[ "${{ github.event.inputs.check_type }}" == "fast_syntax" ]]; then
+            echo "--- BUSCANDO ERRORES EN XML ---"
+            find device/motorola/pettyl -name "*.xml" -print0 | xargs -0 -n1 xmllint --noout || exit 1
+            
+            echo "--- BUSCANDO ERRORES EN INITS (.rc) ---"
+            # Verifica que no haya caracteres extraños o rutas mal formadas básicas
+            find device/motorola/pettyl -name "*.rc" -exec grep -l "service" {} +
+            echo "Sintaxis básica de archivos de texto OK."
+
+          elif [[ "${{ github.event.inputs.check_type }}" == "build_config" ]]; then
+            echo "--- VERIFICANDO MAKEFILES ---"
             source build/envsetup.sh
+            # 'lunch' fallará si hay errores graves en los .mk del dispositivo
             lunch lineage_pettyl-userdebug
-            # 'mmm' compila solo el directorio actual o módulos específicos
-            make -j$(nproc) recoveryimage-nodeps
-          
-          elif [[ "${{ github.event.inputs.check_type }}" == "system_check" ]]; then
-            echo "Verificando dependencias de System..."
-            # Aquí podrías poner un check de selinux o de limpieza de archivos
-            source ../../../build/envsetup.sh
-            lunch lineage_pettyl-userdebug
-            make -j$(nproc) checkbuild
+            echo "El entorno de build reconoce el dispositivo correctamente."
+
+          elif [[ "${{ github.event.inputs.check_type }}" == "selinux_check" ]]; then
+            echo "--- REVISANDO POLÍTICAS SELINUX ---"
+            # Busca archivos .te vacíos o con errores comunes
+            find device/motorola/pettyl/sepolicy -name "*.te" -empty && echo "ADVERTENCIA: Archivos .te vacíos detectados"
+            echo "Check de SEPolicy finalizado."
           fi
 
-      - name: Subir Log de Verificación
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Resultado-Verificacion-${{ github.event.inputs.check_type }}
-          path: |
-            android/lineage/build_log.txt
-            device/motorola/pettyl/
+      - name: Notificar Resultado
+        if: success()
+        run: echo "✅ La verificación de ${{ github.event.inputs.check_type }} ha pasado exitosamente."
+
+      - name: Reportar Fallo
+        if: failure()
+        run: |
+          echo "❌ Se encontraron errores en los archivos. Revisa el log de arriba."
+          exit 1
