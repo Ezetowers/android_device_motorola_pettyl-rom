@@ -1,4 +1,4 @@
-=# Version: 2
+# Version: 2
 # Change Log:
 # - Se comentaron las líneas de 'setfattr' (227, 229) para evitar errores de palabra clave inválida.
 # - Se eliminó la definición duplicada del servicio 'pstore_annotate' (antes en línea 307).
@@ -318,7 +318,7 @@ service apanic_annotate /vendor/bin/apanic_save.sh build
     oneshot
     disabled
 
-Service tcmd /vendor/bin/tcmd
+service tcmd /vendor/bin/tcmd
     class core
     user system
     # Reducido a 13 grupos máximos:
