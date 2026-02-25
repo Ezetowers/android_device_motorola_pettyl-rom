@@ -1,10 +1,21 @@
-#
-# SPDX-FileCopyrightText: The LineageOS Project
-# SPDX-License-Identifier: Apache-2.0
-#
+# Version: 2
+# Changelog:
+# - Se añadió PRODUCT_COPY_FILES para asegurar que el fstab.qcom llegue al recovery y root.
+# - Se añadieron las definiciones de DEVICE para reforzar la identidad del build.
+# - Se mantiene la estructura original de scripts y archivos .rc.
+
+# Identidad (Refuerzo para evitar el error de ro.product.device)
+PRODUCT_DEVICE := pettyl
+PRODUCT_NAME := lineage_pettyl
 
 # API levels
 PRODUCT_SHIPPING_API_LEVEL := 27
+
+# Copy fstab (Crucial para que el OTA pueda montar particiones)
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_RAMDISK)/fstab.qcom \
+    $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_RECOVERY)/root/fstab.qcom \
+    $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.qcom
 
 # Health
 PRODUCT_PACKAGES += \
@@ -18,7 +29,7 @@ PRODUCT_ENFORCE_RRO_TARGETS := *
 # Product characteristics
 PRODUCT_CHARACTERISTICS := default
 
-# Rootdir
+# Rootdir (Scripts de Motorola)
 PRODUCT_PACKAGES += \
     apanic_annotate.sh \
     apanic_copy.sh \
@@ -52,8 +63,9 @@ PRODUCT_PACKAGES += \
     modem_erase_modemst12.sh \
     pstore_annotate.sh \
     qca6234-service.sh \
-    wlan_carrier_bin.sh \
+    wlan_carrier_bin.sh
 
+# Archivos de configuración de inicio (RC)
 PRODUCT_PACKAGES += \
     fstab.qcom \
     init.mmi.chipset.rc \
@@ -70,7 +82,7 @@ PRODUCT_PACKAGES += \
     init.oem.rc \
     init.qcom.factory.rc \
     init.qcom.rc \
-    init.target.rc \
+    init.target.rc
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
