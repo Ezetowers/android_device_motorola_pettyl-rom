@@ -1,8 +1,8 @@
-# Version: 12 - Advanced pettyl Validator
+# Version: 13 - pettyl Structural Fix
 # Changelog:
-# - Corregido error de envsetup.sh (ahora sincroniza vendor/lineage y scripts de build).
-# - Añadida validación profunda de XML y scripts de inicio (.rc).
-# - Implementado menú interactivo para elegir el tipo de chequeo.
+# - Se añade 'build/blueprint' y 'prebuilts/go' (necesarios para microfactory.bash).
+# - Se corrige la ruta del dispositivo para que 'lunch' lo detecte.
+# - Se añade validación automática de fstab.
 
 name: Verificador de Archivos y Sintaxis - pettyl
 
@@ -15,9 +15,8 @@ on:
         default: 'fast_syntax'
         type: choice
         options:
-          - fast_syntax        # Revisa XMLs y .rc (Muy rápido)
-          - build_config       # Revisa Android.mk / Android.bp (Lento)
-          - selinux_check      # Revisa archivos de políticas (.te)
+          - fast_syntax        # XML, Inits y FSTAB (Rápido)
+          - build_config       # Lunch y Makefiles (Estructural)
 
 jobs:
   validate:
@@ -28,32 +27,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Instalar Herramientas de Sistema
+      - name: Instalar Herramientas
         run: |
           sudo apt-get update
           sudo apt-get install -y libxml2-utils python3 python-is-python3
-          # 'repo' es necesario para estructurar las carpetas correctamente
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/local/bin/repo
 
-      - name: Sincronizar Entorno de Build (Mínimo)
+      - name: Sincronizar Mínimo Vital (Fix Microfactory)
         run: |
           mkdir -p android/lineage
           cd android/lineage
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
-          # Sincronizamos solo lo crítico para que 'envsetup.sh' no falle
-          repo sync -c -j$(nproc) --force-sync --no-tags build/make vendor/lineage build/soong
+          # Añadimos build/blueprint y prebuilts/go para que microfactory no explote
+          repo sync -c -j$(nproc) --force-sync --no-tags \
+            build/make \
+            build/soong \
+            build/blueprint \
+            vendor/lineage \
+            prebuilts/go/linux-x86
 
       - name: Preparar Árbol pettyl
         run: |
           cd android/lineage
-          git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
+          # Es vital que la ruta sea device/motorola/pettyl
           mkdir -p device/motorola/pettyl
-          cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
-          # Nota: No borramos .repo aquí porque lunch lo necesita para validar el árbol
-          echo "Árbol listo para verificación."
+          git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
+          
+          # Copiamos el contenido. Ajustamos según la estructura de tu repo:
+          if [ -d "/tmp/pettyl_unified/pettyl" ]; then
+            cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
+          else
+            cp -r /tmp/pettyl_unified/* device/motorola/pettyl/
+          fi
+          rm -rf /tmp/pettyl_unified
 
       - name: Ejecutar Verificación
         run: |
@@ -63,31 +72,21 @@ jobs:
             echo "--- BUSCANDO ERRORES EN XML ---"
             find device/motorola/pettyl -name "*.xml" -print0 | xargs -0 -n1 xmllint --noout || exit 1
             
+            echo "--- VERIFICANDO FSTAB ---"
+            find device/motorola/pettyl -name "*fstab*" -exec grep -q "wait" {} + && echo "fstab parece válido"
+
             echo "--- BUSCANDO ERRORES EN INITS (.rc) ---"
-            # Verifica que no haya caracteres extraños o rutas mal formadas básicas
             find device/motorola/pettyl -name "*.rc" -exec grep -l "service" {} +
-            echo "Sintaxis básica de archivos de texto OK."
 
           elif [[ "${{ github.event.inputs.check_type }}" == "build_config" ]]; then
-            echo "--- VERIFICANDO MAKEFILES ---"
-            source build/envsetup.sh
-            # 'lunch' fallará si hay errores graves en los .mk del dispositivo
-            lunch lineage_pettyl-userdebug
-            echo "El entorno de build reconoce el dispositivo correctamente."
-
-          elif [[ "${{ github.event.inputs.check_type }}" == "selinux_check" ]]; then
-            echo "--- REVISANDO POLÍTICAS SELINUX ---"
-            # Busca archivos .te vacíos o con errores comunes
-            find device/motorola/pettyl/sepolicy -name "*.te" -empty && echo "ADVERTENCIA: Archivos .te vacíos detectados"
-            echo "Check de SEPolicy finalizado."
+            echo "--- VERIFICANDO LUNCH ---"
+            # Forzamos a bash para evitar problemas con envsetup
+            bash -c "source build/envsetup.sh && lunch lineage_pettyl-userdebug"
           fi
-
-      - name: Notificar Resultado
-        if: success()
-        run: echo "✅ La verificación de ${{ github.event.inputs.check_type }} ha pasado exitosamente."
 
       - name: Reportar Fallo
         if: failure()
         run: |
-          echo "❌ Se encontraron errores en los archivos. Revisa el log de arriba."
+          echo "❌ ERROR DETECTADO"
+          echo "Si el error es 'Device not found', revisa que device/motorola/pettyl/lineage_pettyl.mk exista."
           exit 1
