@@ -42,9 +42,9 @@ jobs:
       - name: Instalar dependencias del sistema
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync bundle-config schedtool squashfs-tools xsltproc zip zlib1g-dev python2 python3
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 python3
           sudo ln -sf /usr/bin/python3 /usr/bin/python
-
+          
       - name: Instalar repo
         run: |
           mkdir -p /home/runner/bin
@@ -117,26 +117,28 @@ jobs:
         run: |
           echo "Generando reporte de error..."
           
-          # Extraemos las últimas 200 líneas del log
-          tail -n 200 /home/runner/android/lineage/build_log.txt > error_snippet.txt
+          # 1. Revisar si el archivo de log realmente existe antes de usar 'tail'
+          if [ -f /home/runner/android/lineage/build_log.txt ]; then
+            tail -n 200 /home/runner/android/lineage/build_log.txt > error_snippet.txt
+          else
+            echo "El archivo build_log.txt no existe. El error ocurrió ANTES de la compilación (quizás en apt-get, repo sync o clonando árboles de dispositivo)." > error_snippet.txt
+          fi
           
-          # Creamos el cuerpo del Issue usando formato Markdown
+          # 2. Creamos el cuerpo del Issue
           cat << 'EOF' > issue_body.md
-          ## 🚨 La compilación de LineageOS ha fallado
+          ## 🚨 La ejecución de GitHub Actions ha fallado
           
-          La ejecución del workflow no pudo terminar la ROM. Revisa los artefactos subidos para descargar el archivo `build_log.txt` completo.
+          Revisa los artefactos subidos (si existen) o el registro directo de GitHub Actions.
           
-          ### Últimas 200 líneas del log:
+          ### Detalle del error:
           ```text
           EOF
           
           cat error_snippet.txt >> issue_body.md
           echo '```' >> issue_body.md
           
-          # Generar una fecha para el título
+          # 3. Generar fecha y crear el issue
           FECHA=$(date +'%Y-%m-%d %H:%M')
-          
-          # Crear el issue usando GitHub CLI
           gh issue create \
-            --title "🚨 Build Failed: Release Cannot Be Created ($FECHA)" \
+            --title "🚨 Build Failed: Revisión necesaria ($FECHA)" \
             --body-file issue_body.md
