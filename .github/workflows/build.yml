@@ -1,13 +1,4 @@
-# Version: 10
-# Changelog:
-# - Se añadió soporte para Ccache con persistencia en el caché de GitHub.
-# - Se configuró USE_CCACHE=1 y un límite de 2GB para no saturar el almacenamiento.
-# - Se añadió el paso 'Restore Ccache' para recuperar progreso de builds anteriores.
-# - Se eliminó el "Anti-Rojo" para dejar que GitHub muestre los errores reales.
-# - Se añadió un registro de logs (build_log.txt).
-# - Se configuró la subida de artefactos para que rescate imágenes y logs INCLUSO SI FALLA.
-# - Se reemplazó la creación de Release por la generación automática de un Issue si la build falla.
-
+# Version: 11 - Corregido: Estructura de carpetas pettyl
 name: Build LineageOS 17.1 for pettyl
 
 on:
@@ -32,12 +23,6 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: false
-
-      - name: Purgar paquetes innecesarios manualmente
-        run: |
-          sudo apt-get clean
-          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d/*
-          sudo docker system prune -af
 
       - name: Instalar dependencias del sistema
         run: |
@@ -67,78 +52,68 @@ jobs:
       - name: Clonar y organizar repositorios de pettyl y vendor
         run: |
           cd /home/runner/android/lineage
+          # Clonamos tu repo temporalmente
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
+          
+          # Crear directorios correctos segun el estandar de Android
           mkdir -p device/motorola/pettyl
           mkdir -p vendor/motorola/pettyl
+          
+          # Copiamos el CONTENIDO de las carpetas de tu repo a las rutas finales
+          # Esto evita que quede device/motorola/pettyl/pettyl/ (error comun)
           cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
           cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
+          
+          echo "Verificando estructura de archivos..."
+          ls -l device/motorola/pettyl/AndroidProducts.mk
           rm -rf /tmp/pettyl_unified
-
-      - name: TRUCO Eliminar repo oculto para liberar espacio vital
-        run: |
-          echo "Eliminando la carpeta .repo para recuperar espacio..."
-          rm -rf /home/runner/android/lineage/.repo
-          df -h
 
       - name: Restaurar Ccache
         uses: actions/cache@v4
         with:
           path: /home/runner/.ccache
-          key: ccache-${{ github.sha }}
-          restore-keys: ccache-
+          key: ccache-pettyl-${{ github.sha }}
+          restore-keys: ccache-pettyl-
 
-      - name: Compilar LineageOS (Con Ccache habilitado)
+      - name: Compilar LineageOS
         run: |
           cd /home/runner/android/lineage
           export USE_CCACHE=1
           export CCACHE_DIR=/home/runner/.ccache
-          ccache -M 2G
+          ccache -M 5G
+          
+          # Cargar entorno
           source build/envsetup.sh
+          
+          # Intentar lunch (Si esto falla, el log dira por que)
           lunch lineage_pettyl-userdebug
           
-          # El comando tee guarda un log de todo lo que sale en pantalla
-          mka bacon -j$(nproc --all) | tee build_log.txt
+          # Compilar
+          mka bacon -j$(nproc --all) 2>&1 | tee build_log.txt
 
-      - name: Rescatar Logs e Imágenes (Se ejecuta aunque falle)
+      - name: Rescatar Logs e Imágenes (Siempre se ejecuta)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Archivos-Rescatados-Pettyl
+          name: Pettyl-Build-Output
           path: |
             /home/runner/android/lineage/build_log.txt
             /home/runner/android/lineage/out/target/product/pettyl/*.img
             /home/runner/android/lineage/out/target/product/pettyl/*.zip
-          retention-days: 5
+          retention-days: 3
 
-      - name: Crear Issue si la compilación falla
+      - name: Crear Issue si falla
         if: failure()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Generando reporte de error..."
-          
-          # 1. Revisar si el archivo de log realmente existe antes de usar 'tail'
-          if [ -f /home/runner/android/lineage/build_log.txt ]; then
-            tail -n 200 /home/runner/android/lineage/build_log.txt > error_snippet.txt
+          cd /home/runner/android/lineage
+          if [ -f build_log.txt ]; then
+            tail -n 100 build_log.txt > error_snippet.txt
           else
-            echo "El archivo build_log.txt no existe. El error ocurrió ANTES de la compilación (quizás en apt-get, repo sync o clonando árboles de dispositivo)." > error_snippet.txt
+            echo "No se generó build_log.txt. Error previo a la compilación." > error_snippet.txt
           fi
           
-          # 2. Creamos el cuerpo del Issue
-          cat << 'EOF' > issue_body.md
-          ## 🚨 La ejecución de GitHub Actions ha fallado
-          
-          Revisa los artefactos subidos (si existen) o el registro directo de GitHub Actions.
-          
-          ### Detalle del error:
-          ```text
-          EOF
-          
-          cat error_snippet.txt >> issue_body.md
-          echo '```' >> issue_body.md
-          
-          # 3. Generar fecha y crear el issue
-          FECHA=$(date +'%Y-%m-%d %H:%M')
           gh issue create \
-            --title "🚨 Build Failed: Revisión necesaria ($FECHA)" \
-            --body-file issue_body.md
+            --title "Fallo en Build: pettyl ($(date +'%d-%m %H:%M'))" \
+            --body "Revisa el log adjunto en los artefactos. Resumen del error: $(cat error_snippet.txt)"
