@@ -80,7 +80,7 @@ jobs:
           cd /home/runner/android/lineage
           export USE_CCACHE=1
           export CCACHE_DIR=/home/runner/.ccache
-          ccache -M 5G
+          ccache -M 15G
           
           # Cargar entorno
           source build/envsetup.sh
