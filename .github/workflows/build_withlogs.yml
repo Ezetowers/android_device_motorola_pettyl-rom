@@ -116,7 +116,7 @@ jobs:
           TAIL_PID=$!
           
           # Compilamos y mandamos todo al log. 'tee' ya lo muestra en la consola de GitHub automáticamente.
-          mka bacon -j$(nproc --all) 2>&1 | tee -a build_log.txt
+          mka bacon -j16 2>&1 | tee -a build_log.txt
           
           # Detenemos el envío de logs
           kill $TAIL_PID || true
@@ -158,3 +158,4 @@ jobs:
           gh issue create \
             --title "🚨 Build Failed: Revisar logs ($FECHA)" \
             --body-file issue_body.md
+
