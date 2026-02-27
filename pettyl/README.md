@@ -1,4 +1,5 @@
-<img width="187" height="300" alt="image" src="https://github.com/user-attachments/assets/23e3cfb5-aea6-4477-8007-16aa597223b8" />
+<img width="1920" height="1080" alt="Moto E5 Play GO Banner" src="https://github.com/user-attachments/assets/23b9a9b8-3da9-4c32-a7a1-1e52cb29b4a8" />
+
 
 # DEEP DIVE: Android Build System Files (.mk) & Configurations
 
