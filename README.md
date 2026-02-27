@@ -1,6 +1,5 @@
 # Motorola Moto E5 Play GO (pettyl) - LineageOS 17.1
-
-![Motorola Moto E5 Play GO](https://cdn2.gsmarena.com/vv/pics/motorola/motorola-moto-e5-play-android-go-edition-2.jpg "Moto E5 Play GO")
+<img width="1920" height="1080" alt="Moto E5 Play GO Banner" src="https://github.com/user-attachments/assets/e440b484-452f-4cdd-a0ca-6e1d496cd85f" />
 
 This repository contains the device configuration and sources for the **Motorola Moto E5 Play GO** (codenamed pettyl).
 
@@ -17,7 +16,7 @@ This repository contains the device configuration and sources for the **Motorola
 | Display | 960 x 480 pixels, 18:9 ratio (5.34") |
 | Camera | 8 MP, LED flash |
 | Shipped Android | 8.0 (Oreo) |
-
+![Motorola Moto E5 Play GO](https://cdn2.gsmarena.com/vv/pics/motorola/motorola-moto-e5-play-android-go-edition-2.jpg "Moto E5 Play GO")
 ---
 
 ## Source Structure
@@ -61,7 +60,7 @@ Este repositorio contiene la configuración del dispositivo y las fuentes para e
 | Pantalla | 960 x 480 píxeles, relación 18:9 (5.34") |
 | Cámara | 8 MP, flash LED |
 | Android de Fábrica | 8.0 (Oreo) |
-
+![Motorola Moto E5 Play GO](https://cdn2.gsmarena.com/vv/pics/motorola/motorola-moto-e5-play-android-go-edition-2.jpg "Moto E5 Play GO")
 ---
 
 ## Estructura de las Fuentes
