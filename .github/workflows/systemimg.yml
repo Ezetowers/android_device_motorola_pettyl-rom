@@ -1,4 +1,4 @@
-# Version: 12 - Corregido: system.img y limpieza de estructura
+# Version: 13 - Corregido: system.img, limpieza de estructura y artefactos divididos
 name: Build LineageOS 17.1 System IMG for pettyl
 
 on:
@@ -90,16 +90,43 @@ jobs:
           # Compilar bacon (genera zip) y systemimage
           mka bacon systemimage -j12 2>&1 | tee build_log.txt
 
-      - name: Rescatar Logs e Imágenes (Siempre se ejecuta)
+      # ==========================================================
+      # SECCIÓN DE ARTEFACTOS DIVIDIDA
+      # ==========================================================
+
+      - name: 1. Subir Log de Compilación
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Pettyl-Build-Output
+          name: Pettyl-Build-Log
+          path: /home/runner/android/lineage/build_log.txt
+          retention-days: 3
+
+      - name: 2. Subir Imágenes Principales (System, Boot, Recovery)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pettyl-Essential-Images
           path: |
-            /home/runner/android/lineage/build_log.txt
+            /home/runner/android/lineage/out/target/product/pettyl/system.img
+            /home/runner/android/lineage/out/target/product/pettyl/boot.img
+            /home/runner/android/lineage/out/target/product/pettyl/recovery.img
+          retention-days: 3
+
+      - name: 3. Subir Resto de Archivos Generados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pettyl-Other-Outputs
+          path: |
             /home/runner/android/lineage/out/target/product/pettyl/*.img
             /home/runner/android/lineage/out/target/product/pettyl/*.zip
+            !/home/runner/android/lineage/out/target/product/pettyl/system.img
+            !/home/runner/android/lineage/out/target/product/pettyl/boot.img
+            !/home/runner/android/lineage/out/target/product/pettyl/recovery.img
           retention-days: 3
+
+      # ==========================================================
 
       - name: Crear Issue si falla
         if: failure()
