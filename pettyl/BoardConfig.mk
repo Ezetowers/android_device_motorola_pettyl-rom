@@ -41,6 +41,8 @@ BOARD_DT_SIZE := 219136
 
 # Forzar esquema No-SAR (Legacy) - Arreglar Bootloop
 BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
+BOARD_USES_RECOVERY_AS_BOOT := false
+TARGET_NO_KERNEL := false
 
 # Kernel - prebuilt
 TARGET_FORCE_PREBUILT_KERNEL := true
