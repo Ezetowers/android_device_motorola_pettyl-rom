@@ -1,5 +1,5 @@
 # Version: 12 - Corregido: system.img y limpieza de estructura
-name: Build LineageOS 17.1 for pettyl
+name: Build LineageOS 17.1 System IMG for pettyl
 
 on:
   workflow_dispatch:
