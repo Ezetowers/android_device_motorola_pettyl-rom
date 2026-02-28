@@ -5,6 +5,16 @@
 
 DEVICE_PATH := device/motorola/pettyl
 
+# Architecture
+#TARGET_ARCH := arm
+#TARGET_ARCH_VARIANT := armv7-a-neon
+#TARGET_CPU_ABI := armeabi-v7a
+#TARGET_CPU_ABI2 := armeabi
+#TARGET_CPU_VARIANT := generic
+#TARGET_CPU_VARIANT_RUNTIME := generic
+#
+#TARGET_USES_64_BIT_BINDER := true
+
 # --- Configuración de Arquitectura para 32-bit en Cortex-A53 ---
 TARGET_ARCH := arm
 TARGET_ARCH_VARIANT := armv7-a-neon
