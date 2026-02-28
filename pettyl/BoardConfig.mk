@@ -39,13 +39,6 @@ BOARD_DT_SIZE := 219136
 # TARGET_KERNEL_CONFIG := pettyl_defconfig
 # TARGET_KERNEL_SOURCE := kernel/motorola/pettyl
 
-# Forzar esquema No-SAR (Legacy) - Arreglar Bootloop
-BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
-BOARD_USES_RECOVERY_AS_BOOT := false
-TARGET_NO_KERNEL := false
-# Esto ayuda al script de flasheo a encontrar las particiones
-AB_OTA_UPDATER := false
-
 # Kernel - prebuilt
 TARGET_FORCE_PREBUILT_KERNEL := true
 ifeq ($(TARGET_FORCE_PREBUILT_KERNEL),true)
@@ -60,6 +53,13 @@ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1811939328     # (3538944 * 512)
 BOARD_VENDORIMAGE_PARTITION_SIZE := 318767104      # (622592 * 512)
 BOARD_CACHEIMAGE_PARTITION_SIZE := 268435456       # (524288 * 512)
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 12715015680  # (24834015 * 512)
+
+# Forzar esquema No-SAR (Legacy) - Arreglar Bootloop
+BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
+BOARD_USES_RECOVERY_AS_BOOT := false
+TARGET_NO_KERNEL := false
+# Esto ayuda al script de flasheo a encontrar las particiones
+AB_OTA_UPDATER := false
 
 # Platform
 TARGET_BOARD_PLATFORM := msm8937
