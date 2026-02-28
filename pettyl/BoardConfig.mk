@@ -39,6 +39,9 @@ BOARD_DT_SIZE := 219136
 # TARGET_KERNEL_CONFIG := pettyl_defconfig
 # TARGET_KERNEL_SOURCE := kernel/motorola/pettyl
 
+# Forzar esquema No-SAR (Legacy) - Arreglar Bootloop
+BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
+
 # Kernel - prebuilt
 TARGET_FORCE_PREBUILT_KERNEL := true
 ifeq ($(TARGET_FORCE_PREBUILT_KERNEL),true)
