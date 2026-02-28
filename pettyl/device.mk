@@ -6,6 +6,14 @@
 # API levels
 PRODUCT_SHIPPING_API_LEVEL := 27
 
+# --- Forzar componentes de 32 bits ---
+PRODUCT_PACKAGES += \
+    app_process32 \
+    linker
+
+# Asegurar compatibilidad de 32 bits
+TARGET_SUPPORTS_32_BIT_APPS := true
+
 # Health
 PRODUCT_PACKAGES += \
     android.hardware.health@2.1-impl \
