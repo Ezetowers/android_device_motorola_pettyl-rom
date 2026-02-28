@@ -1,0 +1,118 @@
+# Version: 12 - Corregido: system.img y limpieza de estructura
+name: Build LineageOS 17.1 for pettyl
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compilar ROM
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout del repositorio actual
+        uses: actions/checkout@v4
+
+      - name: Limpieza BRUTAL de espacio en disco
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Instalar dependencias del sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 python3
+          sudo ln -sf /usr/bin/python3 /usr/bin/python
+          
+      - name: Instalar repo
+        run: |
+          mkdir -p /home/runner/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > /home/runner/bin/repo
+          chmod a+x /home/runner/bin/repo
+          sudo cp /home/runner/bin/repo /usr/local/bin/repo
+
+      - name: Configurar Git
+        run: |
+          git config --global user.email "bot@github.com"
+          git config --global user.name "GitHub Actions Bot"
+
+      - name: Sincronizar LineageOS
+        run: |
+          mkdir -p /home/runner/android/lineage
+          cd /home/runner/android/lineage
+          repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet
+
+      - name: Clonar y organizar repositorios de pettyl y vendor
+        run: |
+          cd /home/runner/android/lineage
+          # Clonamos tu repo temporalmente
+          git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
+          
+          # Crear directorios correctos segun el estandar de Android
+          mkdir -p device/motorola/pettyl
+          mkdir -p vendor/motorola/pettyl
+          
+          # Copiamos el CONTENIDO de las carpetas de tu repo a las rutas finales
+          cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
+          cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
+          
+          echo "Verificando estructura de archivos..."
+          ls -l device/motorola/pettyl/AndroidProducts.mk
+          rm -rf /tmp/pettyl_unified
+
+      - name: Restaurar Ccache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.ccache
+          key: ccache-pettyl-${{ github.sha }}
+          restore-keys: ccache-pettyl-
+
+      - name: Compilar LineageOS
+        run: |
+          cd /home/runner/android/lineage
+          export USE_CCACHE=1
+          export CCACHE_DIR=/home/runner/.ccache
+          ccache -M 15G
+          
+          # Cargar entorno
+          source build/envsetup.sh
+          
+          # Lunch
+          lunch lineage_pettyl-userdebug
+          
+          # Compilar bacon (genera zip) y systemimage
+          mka bacon systemimage -j12 2>&1 | tee build_log.txt
+
+      - name: Rescatar Logs e Imágenes (Siempre se ejecuta)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pettyl-Build-Output
+          path: |
+            /home/runner/android/lineage/build_log.txt
+            /home/runner/android/lineage/out/target/product/pettyl/*.img
+            /home/runner/android/lineage/out/target/product/pettyl/*.zip
+          retention-days: 3
+
+      - name: Crear Issue si falla
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd /home/runner/android/lineage
+          if [ -f build_log.txt ]; then
+            tail -n 100 build_log.txt > error_snippet.txt
+          else
+            echo "No se generó build_log.txt. Error previo a la compilación." > error_snippet.txt
+          fi
+          
+          gh issue create \
+            --title "Fallo en Build: pettyl ($(date +'%d-%m %H:%M'))" \
+            --body "Revisa el log adjunto en los artefactos. Resumen del error: $(cat error_snippet.txt)"
