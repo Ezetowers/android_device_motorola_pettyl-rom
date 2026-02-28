@@ -55,7 +55,9 @@ BOARD_CACHEIMAGE_PARTITION_SIZE := 268435456       # (524288 * 512)
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 12715015680  # (24834015 * 512)
 
 # Forzar esquema No-SAR (Legacy) - Arreglar Bootloop
+# --- ESTO ES PARA DESACTIVAR SAR ---
 BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
+# ------------------------------------------------------------
 BOARD_USES_RECOVERY_AS_BOOT := false
 TARGET_NO_KERNEL := false
 BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := ext4
