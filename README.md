@@ -1,7 +1,5 @@
 # Motorola Moto E5 Play GO (pettyl) - LineageOS 17.1
-
-![Motorola Moto E5 Play GO](https://cdn2.gsmarena.com/vv/pics/motorola/motorola-moto-e5-play-android-go-edition-2.jpg "Moto E5 Play GO")
-
+![Moto E5 Play GO Banner](https://github.com/user-attachments/assets/565a3313-7d59-4df9-a8a0-0e5582f25d86)
 This repository contains the device configuration and sources for the **Motorola Moto E5 Play GO** (codenamed pettyl).
 
 ## Device Specifications
@@ -19,7 +17,7 @@ This repository contains the device configuration and sources for the **Motorola
 | Shipped Android | 8.0 (Oreo) |
 
 ---
-
+![Motorola Moto E5 Play GO](https://cdn2.gsmarena.com/vv/pics/motorola/motorola-moto-e5-play-android-go-edition-2.jpg "Moto E5 Play GO")
 ## Source Structure
 
 To build LineageOS 17.1 for this device, you need to set up your workspace as follows:
@@ -63,7 +61,7 @@ Este repositorio contiene la configuración del dispositivo y las fuentes para e
 | Android de Fábrica | 8.0 (Oreo) |
 
 ---
-
+![Motorola Moto E5 Play GO](https://cdn2.gsmarena.com/vv/pics/motorola/motorola-moto-e5-play-android-go-edition-2.jpg "Moto E5 Play GO")
 ## Estructura de las Fuentes
 
 Para compilar LineageOS 17.1 para este dispositivo, debes configurar tu espacio de trabajo de la siguiente manera:
