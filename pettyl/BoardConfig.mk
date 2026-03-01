@@ -25,7 +25,7 @@ TARGET_CPU_VARIANT := cortex-a53
 TARGET_2ND_ARCH := 
 TARGET_2ND_ARCH_VARIANT := 
 TARGET_2ND_CPU_ABI := 
-TARGET_2ND_CPU_VARIANT :=
+TARGET_2ND_CPU_VARIANT := 
 # --- FORZAR 32 BITS ---
 # Esto desactiva la detección automática de 64 bits del A53
 TARGET_IS_64_BIT := false
