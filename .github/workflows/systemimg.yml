@@ -62,7 +62,6 @@ jobs:
           # Copiamos el CONTENIDO de las carpetas de tu repo a las rutas finales
           cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
           cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
-          
           echo "Verificando estructura de archivos..."
           ls -l device/motorola/pettyl/AndroidProducts.mk
           rm -rf /tmp/pettyl_unified
