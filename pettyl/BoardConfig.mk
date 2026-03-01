@@ -15,13 +15,17 @@ DEVICE_PATH := device/motorola/pettyl
 #
 #TARGET_USES_64_BIT_BINDER := true
 
-# --- Configuración de Arquitectura para 32-bit en Cortex-A53 ---
+# --- Forzar compilación Multilib ---
 TARGET_ARCH := arm
-TARGET_ARCH_VARIANT := armv8-a
+TARGET_ARCH_VARIANT := armv7-a-neon
 TARGET_CPU_ABI := armeabi-v7a
-TARGET_CPU_ABI2 := armeabi
 TARGET_CPU_VARIANT := cortex-a53
-TARGET_USES_64_BIT_BINDER := false
+
+# Esto es crucial para forzar la compatibilidad
+TARGET_2ND_ARCH := 
+TARGET_2ND_ARCH_VARIANT := 
+TARGET_2ND_CPU_ABI := 
+TARGET_2ND_CPU_VARIANT :=
 # --- FORZAR 32 BITS ---
 # Esto desactiva la detección automática de 64 bits del A53
 TARGET_IS_64_BIT := false
