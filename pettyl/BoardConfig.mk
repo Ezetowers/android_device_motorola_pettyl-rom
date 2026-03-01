@@ -20,7 +20,7 @@ DEVICE_PATH := device/motorola/pettyl
 TARGET_ARCH := arm # Define la arquitectura principal como ARM de 32 bits.
 # Usamos armv7-a-neon como base para asegurar que el sistema de compilación
 # genere los binarios de 32 bits correctamente (evita error app_process32).
-TARGET_ARCH_VARIANT := armv9-a
+TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
 # OBLIGATORIO: Optimizamos para Cortex-A53.
