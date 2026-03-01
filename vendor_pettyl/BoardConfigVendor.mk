@@ -1,4 +1,6 @@
 # SPDX-FileCopyrightText: The LineageOS Project
 # SPDX-License-Identifier: Apache-2.0
 
-include vendor/motorola/pettyl/pettyl-vendor.mk
+# No incluyas el makefile de producto (pettyl-vendor.mk) aquí.
+# Ya se está heredando en device.mk.
+# include vendor/motorola/pettyl/pettyl-vendor.mk
