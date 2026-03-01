@@ -20,6 +20,7 @@ TARGET_USES_64_BIT_BINDER := true
 # Platform & Bootloader
 # ==========================================================
 TARGET_BOARD_PLATFORM := msm8937
+TARGET_BOARD_PLATFORM_GPU := qcom-adreno505
 TARGET_BOOTLOADER_BOARD_NAME := msm8937
 TARGET_NO_BOOTLOADER := true
 
@@ -53,18 +54,20 @@ BOARD_MKBOOTIMG_ARGS := --kernel_offset $(BOARD_KERNEL_OFFSET) \
 # Partitions & File Systems
 # ==========================================================
 BOARD_FLASH_BLOCK_SIZE := 131072
-BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216         
-BOARD_RECOVERYIMAGE_PARTITION_SIZE := 25165824     
-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1811939328     
-BOARD_VENDORIMAGE_PARTITION_SIZE := 318767104      
-BOARD_CACHEIMAGE_PARTITION_SIZE := 268435456       
-BOARD_USERDATAIMAGE_PARTITION_SIZE := 12715015680  
+BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216
+BOARD_RECOVERYIMAGE_PARTITION_SIZE := 25165824
+BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1811939328
+BOARD_VENDORIMAGE_PARTITION_SIZE := 318767104
+BOARD_CACHEIMAGE_PARTITION_SIZE := 268435456
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 12715015680
 
 BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
 
+# --- CAMBIO AQUÍ ---
+# En modo Legacy con particiones separadas, vendor no es parte de system
 TARGET_COPY_OUT_VENDOR := vendor
 
 # ==========================================================
@@ -79,6 +82,7 @@ TARGET_NO_RECOVERY := false
 # ==========================================================
 PRODUCT_FULL_TREBLE_OVERRIDE := true
 BOARD_VNDK_VERSION := current
+# APEX es problemático en Legacy, forzar aplanado
 OVERRIDE_TARGET_FLATTEN_APEX := true
 
 # ==========================================================
@@ -114,11 +118,3 @@ DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest.xml
 # Inherit Vendor
 # ==========================================================
 include vendor/motorola/pettyl/BoardConfigVendor.mk
-
-# =================================================================
-# =================================================================
-# =================================================================
-# ======================    elmendezz    ==========================
-# =================================================================
-# =================================================================
-# =================================================================
