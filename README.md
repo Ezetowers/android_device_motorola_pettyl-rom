@@ -1,5 +1,6 @@
 # Motorola Moto E5 Play GO (pettyl) - LineageOS 17.1
 ![Moto E5 Play GO Banner](https://github.com/user-attachments/assets/565a3313-7d59-4df9-a8a0-0e5582f25d86)
+[![Build LineageOS 17.1 System IMG for pettyl](https://github.com/elmendezz/android_device_motorola_pettyl-rom/actions/workflows/systemimg.yml/badge.svg)](https://github.com/elmendezz/android_device_motorola_pettyl-rom/actions/workflows/systemimg.yml)
 This repository contains the device configuration and sources for the **Motorola Moto E5 Play GO** (codenamed pettyl).
 
 ## Device Specifications
