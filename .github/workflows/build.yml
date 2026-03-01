@@ -80,7 +80,10 @@ jobs:
           cd /home/runner/android/lineage
           export USE_CCACHE=1
           export CCACHE_DIR=/home/runner/.ccache
-          ccache -M 15G
+          export CCACHE_EXEC=/usr/bin/ccache
+          ccache -M 10G
+          ccache -o compression=true
+          ccache -z
           
           # Cargar entorno
           source build/envsetup.sh
@@ -90,6 +93,9 @@ jobs:
           
           # Compilar
           mka bacon -j$(nproc --all) 2>&1 | tee build_log.txt
+          
+          echo "=== CCACHE STATS ==="
+          ccache -s
 
       - name: Rescatar Logs e Imágenes (Siempre se ejecuta)
         if: always()

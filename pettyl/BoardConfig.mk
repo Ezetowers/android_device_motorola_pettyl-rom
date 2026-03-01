@@ -7,25 +7,24 @@
 DEVICE_PATH := device/motorola/pettyl
 
 # Architecture
-#TARGET_ARCH := arm
-#TARGET_ARCH_VARIANT := armv7-a-neon
-#TARGET_CPU_ABI := armeabi-v7a
-#TARGET_CPU_ABI2 := armeabi
-#TARGET_CPU_VARIANT := generic
-#TARGET_CPU_VARIANT_RUNTIME := generic
-#
-#TARGET_USES_64_BIT_BINDER := true
-
-# Architecture Configuration for a pure 32-bit build
-TARGET_ARCH := arm # Define la arquitectura principal como ARM de 32 bits.
-# Usamos armv7-a-neon como base para asegurar que el sistema de compilación
-# genere los binarios de 32 bits correctamente (evita error app_process32).
-TARGET_ARCH_VARIANT := armv8-a
+TARGET_ARCH := arm
+TARGET_ARCH_VARIANT := armv7-a-neon
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
+TARGET_CPU_VARIANT := generic
+TARGET_CPU_VARIANT_RUNTIME := generic
+TARGET_USES_64_BIT_BINDER := true
+
+# Architecture Configuration for a pure 32-bit build
+#TARGET_ARCH := arm # Define la arquitectura principal como ARM de 32 bits.
+# Usamos armv7-a-neon como base para asegurar que el sistema de compilación
+# genere los binarios de 32 bits correctamente (evita error app_process32).
+#TARGET_ARCH_VARIANT := armv8-a
+#TARGET_CPU_ABI := armeabi-v7a
+#TARGET_CPU_ABI2 := armeabi
 # OBLIGATORIO: Optimizamos para Cortex-A53.
 # Al combinarlo con armv7-a-neon, obtenemos código optimizado A53 en modo 32 bits.
-TARGET_CPU_VARIANT := cortex-a53
+#TARGET_CPU_VARIANT := cortex-a53
 
 # Esto es crucial para forzar la compatibilidad
 #TARGET_2ND_ARCH := 
@@ -36,13 +35,13 @@ TARGET_CPU_VARIANT := cortex-a53
 # Esto desactiva la detección automática de 64 bits del A53
 #TARGET_IS_64_BIT := false
 # This is a pure 32-bit build. No 2nd arch, and use a 32-bit binder.
-TARGET_2ND_ARCH :=
+#TARGET_2ND_ARCH :=
 # OBLIGATORIO: El kernel del Snapdragon 425 es de 64 bits.
 # Necesitamos binder de 64 bits para comunicarnos con él, aunque el userspace sea de 32 bits.
-TARGET_USES_64_BIT_BINDER := true
+#TARGET_USES_64_BIT_BINDER := true
 
 # Asegurar soporte explícito de aplicaciones de 32 bits
-TARGET_SUPPORTS_32_BIT_APPS := true
+#TARGET_SUPPORTS_32_BIT_APPS := true
 
 # APEX
 OVERRIDE_TARGET_FLATTEN_APEX := true
@@ -62,7 +61,12 @@ BOARD_KERNEL_PAGESIZE := 2048
 BOARD_KERNEL_OFFSET := 0x00008000
 BOARD_RAMDISK_OFFSET := 0x01000000
 BOARD_TAGS_OFFSET := 0x00000100
-BOARD_DT_SIZE := 219136
+
+# Argumentos explícitos para mkbootimg (Vital para bootear kernel prebuilt)
+# Eliminamos BOARD_DT_SIZE ya que suele causar conflictos si el DTB ya está pegado al kernel.
+BOARD_MKBOOTIMG_ARGS := --kernel_offset $(BOARD_KERNEL_OFFSET) \
+                        --ramdisk_offset $(BOARD_RAMDISK_OFFSET) \
+                        --tags_offset $(BOARD_TAGS_OFFSET)
 
 # Comentamos esto porque vamos a usar el kernel extraído (prebuilt), no a compilarlo desde cero
 # TARGET_KERNEL_CONFIG := pettyl_defconfig
@@ -86,6 +90,7 @@ BOARD_USERDATAIMAGE_PARTITION_SIZE := 12715015680  # (24834015 * 512)
 # Forzar esquema No-SAR (Legacy) - Arreglar Bootloop
 # --- ESTO ES PARA DESACTIVAR SAR ---
 BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
+BOARD_ROOT_EXTRA_FOLDERS := # Asegura que no se metan carpetas de root en system
 # ------------------------------------------------------------
 BOARD_USES_RECOVERY_AS_BOOT := false
 TARGET_NO_KERNEL := false

@@ -98,11 +98,22 @@ jobs:
           rm -rf /home/runner/android/lineage/.repo
           df -h
 
+      - name: Restaurar Ccache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.ccache
+          key: ccache-pettyl-${{ github.sha }}
+          restore-keys: ccache-pettyl-
+
       - name: Compilar LineageOS (Con Live Logs Rápido)
         run: |
           cd /home/runner/android/lineage
-          export USE_CCACHE=0
-          export CCACHE_DISABLE=1
+          export USE_CCACHE=1
+          export CCACHE_DIR=/home/runner/.ccache
+          export CCACHE_EXEC=/usr/bin/ccache
+          ccache -M 10G
+          ccache -o compression=true
+          ccache -z
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
           
@@ -117,6 +128,9 @@ jobs:
           
           # Compilamos y mandamos todo al log. 'tee' ya lo muestra en la consola de GitHub automáticamente.
           mka bacon -j16 2>&1 | tee -a build_log.txt
+          
+          echo "=== CCACHE STATS ==="
+          ccache -s
           
           # Detenemos el envío de logs
           kill $TAIL_PID || true
@@ -158,4 +172,3 @@ jobs:
           gh issue create \
             --title "🚨 Build Failed: Revisar logs ($FECHA)" \
             --body-file issue_body.md
-
