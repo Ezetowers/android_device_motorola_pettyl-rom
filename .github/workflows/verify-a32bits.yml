@@ -1,0 +1,87 @@
+name: DEBUG Architecture Pettyl (Lineage 17.1)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Debug Arch
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout del repositorio actual
+        uses: actions/checkout@v4
+
+      - name: Limpieza de espacio
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Instalar dependencias
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python2 python3
+          sudo ln -sf /usr/bin/python3 /usr/bin/python
+
+      - name: Instalar repo
+        run: |
+          mkdir -p ~/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          sudo cp ~/bin/repo /usr/local/bin/repo
+
+      - name: Configurar Git
+        run: |
+          git config --global user.email "bot@github.com"
+          git config --global user.name "GitHub Actions Bot"
+
+      - name: Sincronizar LineageOS 17.1
+        run: |
+          mkdir -p ~/android/lineage
+          cd ~/android/lineage
+          repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet
+
+      - name: Clonar device y vendor pettyl
+        run: |
+          cd ~/android/lineage
+          git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
+          
+          mkdir -p device/motorola/pettyl
+          mkdir -p vendor/motorola/pettyl
+          
+          cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
+          cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
+          rm -rf /tmp/pettyl_unified
+
+      - name: DEBUG Variables después del lunch
+        run: |
+          cd ~/android/lineage
+          source build/envsetup.sh
+          lunch lineage_pettyl-userdebug
+
+          echo "==== VARIABLES DE BUILD ====" | tee vars_debug.txt
+          echo "TARGET_ARCH: $(get_build_var TARGET_ARCH)" | tee -a vars_debug.txt
+          echo "TARGET_2ND_ARCH: $(get_build_var TARGET_2ND_ARCH)" | tee -a vars_debug.txt
+          echo "TARGET_CPU_VARIANT: $(get_build_var TARGET_CPU_VARIANT)" | tee -a vars_debug.txt
+          echo "TARGET_SUPPORTS_64_BIT_APPS: $(get_build_var TARGET_SUPPORTS_64_BIT_APPS)" | tee -a vars_debug.txt
+          echo "TARGET_SUPPORTS_32_BIT_APPS: $(get_build_var TARGET_SUPPORTS_32_BIT_APPS)" | tee -a vars_debug.txt
+          echo "TARGET_USES_64_BIT_BINDER: $(get_build_var TARGET_USES_64_BIT_BINDER)" | tee -a vars_debug.txt
+          echo "PRODUCT_NAME: $(get_build_var PRODUCT_NAME)" | tee -a vars_debug.txt
+          echo "PRODUCT_PACKAGES contains zygote?" | tee -a vars_debug.txt
+          
+          echo "==== INTENTANDO COMPILAR app_process32 ====" | tee -a vars_debug.txt
+          m app_process32 -j8 2>&1 | tee -a vars_debug.txt || true
+
+      - name: Subir archivo de debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pettyl-Architecture-Debug
+          path: /home/runner/android/lineage/vars_debug.txt
+          retention-days: 5
