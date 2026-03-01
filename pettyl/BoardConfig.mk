@@ -1,5 +1,6 @@
 #
 # SPDX-FileCopyrightText: The LineageOS Project
+# SPDX-FileCopyrightText: 2026 elmendezz
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -19,7 +20,7 @@ DEVICE_PATH := device/motorola/pettyl
 TARGET_ARCH := arm # Define la arquitectura principal como ARM de 32 bits.
 # Usamos armv7-a-neon como base para asegurar que el sistema de compilación
 # genere los binarios de 32 bits correctamente (evita error app_process32).
-TARGET_ARCH_VARIANT := armv7-a-neon
+TARGET_ARCH_VARIANT := armv9-a
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
 # OBLIGATORIO: Optimizamos para Cortex-A53.
@@ -114,3 +115,11 @@ DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest.xml
 
 # Inherit the proprietary files
 include vendor/motorola/pettyl/BoardConfigVendor.mk
+
+# =================================================================
+# =================================================================
+# =================================================================
+# ======================    elmendezz    ==========================
+# =================================================================
+# =================================================================
+# =================================================================

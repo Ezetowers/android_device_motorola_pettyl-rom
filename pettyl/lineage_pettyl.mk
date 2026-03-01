@@ -1,5 +1,6 @@
 #
 # SPDX-FileCopyrightText: The LineageOS Project
+# SPDX-FileCopyrightText: 2026 elmendezz
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -23,3 +24,11 @@ PRODUCT_GMS_CLIENTID_BASE := android-motorola
 PRODUCT_BUILD_PROP_OVERRIDES += \
     BuildDesc="pettyl-user 8.1.0 OPGS28.54-53-8-20 90aa7 release-keys" \
     BuildFingerprint=motorola/pettyl/pettyl:8.1.0/OPGS28.54-53-8-20/90aa7:user/release-keys
+
+# =================================================================
+# =================================================================
+# =================================================================
+# ======================    elmendezz    ==========================
+# =================================================================
+# =================================================================
+# =================================================================
