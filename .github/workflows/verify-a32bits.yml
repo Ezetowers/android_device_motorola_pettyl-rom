@@ -7,6 +7,8 @@ jobs:
   build:
     name: Debug Arch
     runs-on: ubuntu-22.04
+    # Aumentamos el tiempo de espera por si acaso, aunque con la optimización no debería hacer falta
+    timeout-minutes: 360 
 
     steps:
       - name: Checkout del repositorio actual
@@ -43,16 +45,25 @@ jobs:
 
       - name: Sincronizar LineageOS 17.1
         run: |
-          mkdir -p ~/android/lineage
-          cd ~/android/lineage
+          # 1. Cambiamos la ruta de trabajo al directorio raíz del runner para simplificar
+          mkdir -p $GITHUB_WORKSPACE/android/lineage
+          cd $GITHUB_WORKSPACE/android/lineage
+          
+          # 2. --depth=1 es crucial, descarga solo el último commit, no todo el historial.
           repo init -u https://github.com/LineageOS/android.git -b lineage-17.1 --depth=1
-          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --quiet
+          
+          # 3. Optimizaciones de sync:
+          # -j$(nproc) : usa todos los hilos de CPU disponibles.
+          # --no-tags : ahorra mucho tiempo al no descargar etiquetas de git.
+          # --no-clone-bundle : a veces da error o es más lento en GH Actions.
+          repo sync -c -j$(nproc) --force-sync --no-tags --no-clone-bundle
 
       - name: Clonar device y vendor pettyl
         run: |
-          cd ~/android/lineage
+          cd $GITHUB_WORKSPACE/android/lineage
           git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
           
+          # 4. Ajustar rutas de copia (no necesitas usar ~/, usa la ruta absoluta)
           mkdir -p device/motorola/pettyl
           mkdir -p vendor/motorola/pettyl
           
@@ -62,7 +73,7 @@ jobs:
 
       - name: DEBUG Variables después del lunch
         run: |
-          cd ~/android/lineage
+          cd $GITHUB_WORKSPACE/android/lineage
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
 
@@ -70,18 +81,16 @@ jobs:
           echo "TARGET_ARCH: $(get_build_var TARGET_ARCH)" | tee -a vars_debug.txt
           echo "TARGET_2ND_ARCH: $(get_build_var TARGET_2ND_ARCH)" | tee -a vars_debug.txt
           echo "TARGET_CPU_VARIANT: $(get_build_var TARGET_CPU_VARIANT)" | tee -a vars_debug.txt
-          echo "TARGET_SUPPORTS_64_BIT_APPS: $(get_build_var TARGET_SUPPORTS_64_BIT_APPS)" | tee -a vars_debug.txt
-          echo "TARGET_SUPPORTS_32_BIT_APPS: $(get_build_var TARGET_SUPPORTS_32_BIT_APPS)" | tee -a vars_debug.txt
-          echo "TARGET_USES_64_BIT_BINDER: $(get_build_var TARGET_USES_64_BIT_BINDER)" | tee -a vars_debug.txt
           echo "PRODUCT_NAME: $(get_build_var PRODUCT_NAME)" | tee -a vars_debug.txt
-          echo "PRODUCT_PACKAGES contains zygote?" | tee -a vars_debug.txt
           
           echo "==== INTENTANDO COMPILAR app_process32 ====" | tee -a vars_debug.txt
-          m app_process32 -j8 2>&1 | tee -a vars_debug.txt || true
+          # Reducimos hilos si el runner se queda sin RAM, pero -j8 está bien para ubuntu-22.04
+          m app_process32 -j$(nproc) 2>&1 | tee -a vars_debug.txt || true
 
       - name: Subir archivo de debug
         uses: actions/upload-artifact@v4
         with:
           name: Pettyl-Architecture-Debug
-          path: /home/runner/android/lineage/vars_debug.txt
+          # 5. Ruta actualizada
+          path: $GITHUB_WORKSPACE/android/lineage/vars_debug.txt
           retention-days: 5
