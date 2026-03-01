@@ -13,7 +13,7 @@ DEVICE_PATH := device/motorola/pettyl
 #TARGET_CPU_VARIANT := generic
 #TARGET_CPU_VARIANT_RUNTIME := generic
 #
-#TARGET_USES_64_BIT_BINDER := true
+TARGET_USES_64_BIT_BINDER := true
 
 # --- Forzar compilación Multilib ---
 TARGET_ARCH := arm
