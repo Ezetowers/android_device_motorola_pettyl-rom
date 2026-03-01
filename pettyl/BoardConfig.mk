@@ -17,19 +17,26 @@ DEVICE_PATH := device/motorola/pettyl
 
 # Architecture Configuration for a pure 32-bit build
 TARGET_ARCH := arm
-TARGET_ARCH_VARIANT := armv8-a
+# TARGET_ARCH_VARIANT := armv8-a
+# Usamos armv7-a-neon para asegurar compatibilidad total con 32-bit y evitar error de app_process32
+TARGET_ARCH_VARIANT := armv7-a-neon
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
-TARGET_CPU_VARIANT := cortex-a53
+# TARGET_CPU_VARIANT := cortex-a53
+# Usamos generic para evitar que el sistema fuerce armv8-a y pida 64 bits
+TARGET_CPU_VARIANT := generic
 
 # Esto es crucial para forzar la compatibilidad
-TARGET_2ND_ARCH := 
-TARGET_2ND_ARCH_VARIANT := 
-TARGET_2ND_CPU_ABI := 
-TARGET_2ND_CPU_VARIANT := 
+#TARGET_2ND_ARCH := 
+#TARGET_2ND_ARCH_VARIANT := 
+#TARGET_2ND_CPU_ABI := 
+#TARGET_2ND_CPU_VARIANT := 
 # --- FORZAR 32 BITS ---
 # Esto desactiva la detección automática de 64 bits del A53
-TARGET_IS_64_BIT := false
+#TARGET_IS_64_BIT := false
+# This is a pure 32-bit build. No 2nd arch, and use a 32-bit binder.
+TARGET_2ND_ARCH :=
+TARGET_USES_64_BIT_BINDER := false
 
 # APEX
 OVERRIDE_TARGET_FLATTEN_APEX := true
