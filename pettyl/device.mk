@@ -8,10 +8,10 @@ PRODUCT_SHIPPING_API_LEVEL := 27
 
 # --- Componentes esenciales de 32 bits ---
 PRODUCT_PACKAGES += \
-    app_process32 \
+    app_process \
     linker \
     toolbox
-    
+
 # Asegurar compatibilidad de 32 bits
 TARGET_SUPPORTS_32_BIT_APPS := true
 
