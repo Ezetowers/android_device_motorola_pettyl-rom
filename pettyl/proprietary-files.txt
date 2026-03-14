@@ -16,10 +16,10 @@ vendor/lib/libadsp_default_listener.so
 vendor/lib/libadsprpc.so
 
 # ADSP modules
-lib/rfsa/adsp/libapps_mem_heap.so
-lib/rfsa/adsp/libdspCV_skel.so
-lib/rfsa/adsp/libfastcvadsp.so
-lib/rfsa/adsp/libfastcvadsp_skel.so
+#lib/rfsa/adsp/libapps_mem_heap.so
+#lib/rfsa/adsp/libdspCV_skel.so
+#lib/rfsa/adsp/libfastcvadsp.so
+#lib/rfsa/adsp/libfastcvadsp_skel.so
 vendor/lib/rfsa/adsp/capi_v2_smartAmp_TAS25xx.so.1
 vendor/lib/rfsa/adsp/libapps_mem_heap.so
 vendor/lib/rfsa/adsp/libdspCV_skel.so
