@@ -105,7 +105,7 @@ jobs:
         with:
           name: Pettyl-Build-Log
           path: /home/runner/android/lineage/build_log.txt
-          retention-days: 3
+          retention-days: 20
 
       - name: 2. Subir Imágenes Principales (System, Boot, Recovery)
         if: always()
