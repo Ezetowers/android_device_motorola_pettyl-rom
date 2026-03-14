@@ -111,8 +111,11 @@ USE_XML_AUDIO_POLICY_CONF := 1
 # Recovery
 # ==========================================================
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
-TARGET_USERIMAGES_USE_EXT4 := true
+
+# All android go devices use f2fs userdata
+#TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
 
 # ==========================================================
 # Security & VINTF
