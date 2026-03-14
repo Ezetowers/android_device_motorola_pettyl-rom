@@ -90,7 +90,7 @@ jobs:
           lunch lineage_pettyl-userdebug
           
           # Compilar bacon (genera zip) y systemimage
-          mka bacon systemimage -j12 2>&1 | tee build_log.txt
+          mka bacon systemimage -j8 2>&1 | tee build_log.txt
           
           echo "=== CCACHE STATS ==="
           ccache -s
