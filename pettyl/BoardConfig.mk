@@ -5,6 +5,9 @@
 
 DEVICE_PATH := device/motorola/pettyl
 
+# For building with minimal manifest
+ALLOW_MISSING_DEPENDENCIES := true
+
 # ==========================================================
 # Architecture (32-bit Userspace / 64-bit Kernel Binder)
 # ==========================================================
