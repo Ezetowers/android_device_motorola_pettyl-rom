@@ -1325,8 +1325,8 @@ vendor/bin/subsystem_ramdump
 vendor/bin/tcmd
 vendor/bin/tcmdhelp
 vendor/bin/test_diag
-vendor/bin/tinymix
-vendor/bin/tinyplay
+#vendor/bin/tinymix
+#vendor/bin/tinyplay
 vendor/bin/ufsgetsn
 vendor/bin/vendor_cmd_tool
 vendor/bin/wcnss_filter
