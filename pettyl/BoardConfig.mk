@@ -71,6 +71,11 @@ BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
 TARGET_COPY_OUT_VENDOR := vendor
 TARGET_COPY_OUT_SYSTEM := system
 
+# No-SAR try Num. 1
+BOARD_ROOT_EXTRA_FOLDERS := bt_firmware firmware persist
+TARGET_USERIMAGES_SPARSE_EXT4_DISABLED := false
+
+
 # ==========================================================
 # FORZAR ESQUEMA NO-SAR (Legacy)
 # ==========================================================
