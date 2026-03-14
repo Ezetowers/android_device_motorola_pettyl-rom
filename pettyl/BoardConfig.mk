@@ -9,12 +9,12 @@ DEVICE_PATH := device/motorola/pettyl
 # Architecture (32-bit Userspace / 64-bit Kernel Binder)
 # ==========================================================
 TARGET_ARCH := arm
-TARGET_ARCH_VARIANT := armv7-a-neon
+TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
-TARGET_CPU_VARIANT := generic
-TARGET_CPU_VARIANT_RUNTIME := generic
-TARGET_USES_64_BIT_BINDER := true
+TARGET_CPU_VARIANT := cortex-a53
+TARGET_CPU_VARIANT_RUNTIME := cortex-a53
+# TARGET_USES_64_BIT_BINDER := true
 
 # ==========================================================
 # Platform & Bootloader
@@ -69,6 +69,7 @@ BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
 # --- CAMBIO AQUÍ ---
 # En modo Legacy con particiones separadas, vendor no es parte de system
 TARGET_COPY_OUT_VENDOR := vendor
+TARGET_COPY_OUT_SYSTEM := system
 
 # ==========================================================
 # FORZAR ESQUEMA NO-SAR (Legacy)
