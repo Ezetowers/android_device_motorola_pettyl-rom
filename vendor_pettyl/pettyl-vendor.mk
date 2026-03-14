@@ -1042,7 +1042,6 @@ PRODUCT_COPY_FILES += \
     vendor/motorola/pettyl/proprietary/vendor/bin/irsc_util:$(TARGET_COPY_OUT_VENDOR)/bin/irsc_util \
     vendor/motorola/pettyl/proprietary/vendor/bin/kpgather:$(TARGET_COPY_OUT_VENDOR)/bin/kpgather \
     vendor/motorola/pettyl/proprietary/vendor/bin/kpreadwrite:$(TARGET_COPY_OUT_VENDOR)/bin/kpreadwrite \
-    vendor/motorola/pettyl/proprietary/vendor/bin/make_f2fs:$(TARGET_COPY_OUT_VENDOR)/bin/make_f2fs \
     vendor/motorola/pettyl/proprietary/vendor/bin/masterclear:$(TARGET_COPY_OUT_VENDOR)/bin/masterclear \
     vendor/motorola/pettyl/proprietary/vendor/bin/mbm_spy:$(TARGET_COPY_OUT_VENDOR)/bin/mbm_spy \
     vendor/motorola/pettyl/proprietary/vendor/bin/memtest_mode:$(TARGET_COPY_OUT_VENDOR)/bin/memtest_mode \
@@ -1069,8 +1068,6 @@ PRODUCT_COPY_FILES += \
     vendor/motorola/pettyl/proprietary/vendor/bin/tcmd:$(TARGET_COPY_OUT_VENDOR)/bin/tcmd \
     vendor/motorola/pettyl/proprietary/vendor/bin/tcmdhelp:$(TARGET_COPY_OUT_VENDOR)/bin/tcmdhelp \
     vendor/motorola/pettyl/proprietary/vendor/bin/test_diag:$(TARGET_COPY_OUT_VENDOR)/bin/test_diag \
-    vendor/motorola/pettyl/proprietary/vendor/bin/tinymix:$(TARGET_COPY_OUT_VENDOR)/bin/tinymix \
-    vendor/motorola/pettyl/proprietary/vendor/bin/tinyplay:$(TARGET_COPY_OUT_VENDOR)/bin/tinyplay \
     vendor/motorola/pettyl/proprietary/vendor/bin/ufsgetsn:$(TARGET_COPY_OUT_VENDOR)/bin/ufsgetsn \
     vendor/motorola/pettyl/proprietary/vendor/bin/vendor_cmd_tool:$(TARGET_COPY_OUT_VENDOR)/bin/vendor_cmd_tool \
     vendor/motorola/pettyl/proprietary/vendor/bin/wcnss_filter:$(TARGET_COPY_OUT_VENDOR)/bin/wcnss_filter \

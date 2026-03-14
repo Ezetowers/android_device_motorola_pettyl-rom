@@ -1298,7 +1298,7 @@ vendor/bin/icm
 vendor/bin/irsc_util
 vendor/bin/kpgather
 vendor/bin/kpreadwrite
-vendor/bin/make_f2fs
+#vendor/bin/make_f2fs
 vendor/bin/masterclear
 vendor/bin/mbm_spy
 vendor/bin/memtest_mode
