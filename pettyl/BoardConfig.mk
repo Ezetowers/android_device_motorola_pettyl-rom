@@ -75,7 +75,7 @@ TARGET_COPY_OUT_VENDOR := vendor
 TARGET_COPY_OUT_SYSTEM := system
 
 # No-SAR try Num. 1
-BOARD_ROOT_EXTRA_FOLDERS := bt_firmware firmware persist
+BOARD_ROOT_EXTRA_FOLDERS := firmware persist
 TARGET_USERIMAGES_SPARSE_EXT4_DISABLED := false
 
 
