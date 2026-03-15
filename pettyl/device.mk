@@ -87,3 +87,7 @@ $(call inherit-product, vendor/motorola/pettyl/pettyl-vendor.mk)
 # =================================================================
 # =================================================================
 # =================================================================
+
+# Fix SELinux: Create /firmware mount point
+PRODUCT_COPY_FILES += \
+    device/motorola/pettyl/configs/.placeholder:system/firmware/.placeholder
