@@ -77,6 +77,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_SOONG_NAMESPACES += \
     $(LOCAL_PATH)
 
+# Symlink para corregir el error de e2fsdroid con /firmware
+PRODUCT_PACKAGES += \
+    vendor_firmware_symlink
 # Inherit the proprietary files
 $(call inherit-product, vendor/motorola/pettyl/pettyl-vendor.mk)
 
