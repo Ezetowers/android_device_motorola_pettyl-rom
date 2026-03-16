@@ -80,6 +80,13 @@ PRODUCT_SOONG_NAMESPACES += \
 # Inherit the proprietary files
 $(call inherit-product, vendor/motorola/pettyl/pettyl-vendor.mk)
 
+# ==========================================================
+# CRITICAL: Non-SAR (Legacy) Boot Requirements
+# Copiar fstab al Ramdisk para que 'init' pueda montar /system
+# ==========================================================
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_RAMDISK)/fstab.qcom
+
 # Create necessary symlinks for firmware, persist, etc.
 PRODUCT_PACKAGES += pettyl_symlinks
 

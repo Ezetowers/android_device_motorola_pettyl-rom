@@ -69,14 +69,9 @@ BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
 
-# --- CAMBIO AQUÍ ---
-# En modo Legacy con particiones separadas, vendor no es parte de system
+# Legacy Partitioning (Non-SAR)
 TARGET_COPY_OUT_VENDOR := vendor
 TARGET_COPY_OUT_SYSTEM := system
-
-# No-SAR try Num. 1
-TARGET_USERIMAGES_SPARSE_EXT4_DISABLED := false
-
 
 # ==========================================================
 # FORZAR ESQUEMA NO-SAR (Legacy)
@@ -84,6 +79,9 @@ TARGET_USERIMAGES_SPARSE_EXT4_DISABLED := false
 BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
 BOARD_USES_RECOVERY_AS_BOOT := false
 TARGET_NO_RECOVERY := false
+
+# Bootloader Assertion
+TARGET_BOOTLOADER_BOARD_NAME := msm8937
 
 # ==========================================================
 # Treble & APEX
