@@ -77,11 +77,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_SOONG_NAMESPACES += \
     $(LOCAL_PATH)
 
-# Symlink para corregir el error de e2fsdroid con /firmware
-PRODUCT_PACKAGES += \
-    vendor_firmware_symlink
 # Inherit the proprietary files
 $(call inherit-product, vendor/motorola/pettyl/pettyl-vendor.mk)
+
+# Create necessary symlinks for firmware, persist, etc.
+PRODUCT_PACKAGES += pettyl_symlinks
 
 # =================================================================
 # =================================================================
@@ -90,7 +90,3 @@ $(call inherit-product, vendor/motorola/pettyl/pettyl-vendor.mk)
 # =================================================================
 # =================================================================
 # =================================================================
-
-# Fix SELinux: Create /firmware mount point
-PRODUCT_COPY_FILES += \
-    device/motorola/pettyl/configs/.placeholder:system/firmware/.placeholder

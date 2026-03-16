@@ -66,6 +66,12 @@ jobs:
           ls -l device/motorola/pettyl/AndroidProducts.mk
           rm -rf /tmp/pettyl_unified
 
+      - name: TRUCO Eliminar .repo para liberar espacio vital
+        run: |
+          echo "Eliminando la carpeta .repo para recuperar espacio..."
+          rm -rf /home/runner/android/lineage/.repo
+          df -h
+
       - name: Restaurar Ccache
         uses: actions/cache@v4
         with:
