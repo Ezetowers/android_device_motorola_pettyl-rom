@@ -77,7 +77,7 @@ jobs:
           cd /home/runner/android/lineage
           export USE_CCACHE=1
           export CCACHE_DIR=/home/runner/.ccache
-          export _JAVA_OPTIONS="-Xmx4g"
+          export _JAVA_OPTIONS="-Xmx6g"
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
           
