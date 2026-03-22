@@ -1,5 +1,4 @@
-# Version: 14.0 - Logs Pro + Pre-Release System + Swap 3GB
-name: Build LineageOS 17.1 (Pettyl) - Debug & Logs
+name: Build LineageOS 17.1 (Pettyl) - System Image
 
 on:
   workflow_dispatch:
@@ -16,7 +15,7 @@ jobs:
       - name: Configurar 3GB de Swap
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 3
+          swap-size-gb: 4
 
       - name: Limpieza BRUTAL de espacio en disco
         uses: jlumbroso/free-disk-space@main
@@ -60,7 +59,7 @@ jobs:
           cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
           rm -rf /tmp/pettyl_unified
 
-      - name: TRUCO Eliminar .repo
+      - name: TRUCO Eliminar .repo para espacio
         run: rm -rf /home/runner/android/lineage/.repo
 
       - name: Restaurar Ccache
@@ -72,16 +71,16 @@ jobs:
 
       - name: Compilar LineageOS
         id: build_step
-        continue-on-error: true
         run: |
           cd /home/runner/android/lineage
           export USE_CCACHE=1
           export CCACHE_DIR=/home/runner/.ccache
+          # Subimos Java a 6GB aprovechando el Swap
           export _JAVA_OPTIONS="-Xmx6g"
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
           
-          # Compilación con -j2 para estabilidad
+          # FORZAMOS -j8 como pediste
           mka bacon systemimage -j8 2>&1 | tee build_log.txt
           
           if [ ${PIPESTATUS[0]} -eq 0 ]; then
@@ -90,9 +89,9 @@ jobs:
             echo "STATUS=failed" >> $GITHUB_ENV
             exit 1
           fi
+        continue-on-error: true
 
-      # --- GENERACIÓN DE METADATOS PARA EL LOG ---
-      - name: Preparar Reporte de Logs
+      - name: Prepararse
         if: always()
         run: |
           cd /home/runner/android/lineage
@@ -100,22 +99,21 @@ jobs:
           echo "**Estado:** ${{ env.STATUS || 'failed' }}" >> final_report.md
           echo "**Fecha:** $(date +'%d/%m/%Y %H:%M')" >> final_report.md
           echo "" >> final_report.md
-          
-          echo "#### PESO DE ARCHIVOS GENERADOS ####" >> final_report.md
+          echo "#### PESO DE IMÁGENES GENERADAS ####" >> final_report.md
           if [ -d out/target/product/pettyl ]; then
-            ls -lh out/target/product/pettyl/*.img 2>/dev/null >> final_report.md || echo "No hay archivos .img" >> final_report.md
+            ls -lh out/target/product/pettyl/*.img 2>/dev/null >> final_report.md || echo "No se encontraron .img" >> final_report.md
+          else
+            echo "Directorio de salida no encontrado." >> final_report.md
           fi
           echo "" >> final_report.md
+          echo "#### ÚLTIMOS 30 COMMITS SOURCE ####" >> final_report.md
+          cd device/motorola/pettyl && echo "--- Device ---" >> ../../../final_report.md && git log -n 15 --oneline >> ../../../final_report.md
+          cd ../../../vendor/motorola/pettyl && echo "--- Vendor ---" >> ../../final_report.md && git log -n 15 --oneline >> ../../final_report.md
           
-          echo "#### ÚLTIMOS 30 CAMBIOS (DEVICE/VENDOR) ####" >> final_report.md
-          cd device/motorola/pettyl && echo "--- Device Tree ---" >> ../../../final_report.md && git log -n 15 --oneline >> ../../../final_report.md
-          cd ../../../vendor/motorola/pettyl && echo "--- Vendor Tree ---" >> ../../final_report.md && git log -n 15 --oneline >> ../../final_report.md
-          
-          # Guardar variables para el release
-          echo "RELEASE_TAG=$(date +'%d-%m-%Y')-$(date +'%H%M')-run${{ github.run_number }}" >> $GITHUB_ENV
+          echo "RELEASE_TAG=Log-$(date +'%d-%m-%y')-run${{ github.run_number }}" >> $GITHUB_ENV
           echo "RELEASE_TITLE=Logs $(date +'%d/%m/%Y') #${{ github.run_number }} (${{ env.STATUS || 'failed' }})" >> $GITHUB_ENV
 
-      - name: 1. Subir Log como Artefacto (Persistencia 90 días)
+      - name: 1. Subir Log a Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -123,7 +121,7 @@ jobs:
           path: /home/runner/android/lineage/build_log.txt
           retention-days: 90
 
-      - name: 2. Crear Pre-Release con Logs
+      - name: 2. Crear Pre-Release
         if: always()
         uses: softprops/action-gh-release@v1
         with:
@@ -131,18 +129,16 @@ jobs:
           name: ${{ env.RELEASE_TITLE }}
           body_path: /home/runner/android/lineage/final_report.md
           files: /home/runner/android/lineage/build_log.txt
-          draft: false
           prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 3. Subir Imágenes (Solo si compiló con éxito)
-        if: env.STATUS == 'successfully compiled'
+      - name: 3. Subir TODAS las Imágenes
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Pettyl-Images
+          name: Pettyl-Output-Images
           path: |
-            /home/runner/android/lineage/out/target/product/pettyl/system.img
-            /home/runner/android/lineage/out/target/product/pettyl/boot.img
-            /home/runner/android/lineage/out/target/product/pettyl/recovery.img
-          retention-days: 7
+            /home/runner/android/lineage/out/target/product/pettyl/*.img
+            /home/runner/android/lineage/out/target/product/pettyl/*.zip
+          retention-days: 14
