@@ -13,6 +13,10 @@ $(call inherit-product, device/motorola/pettyl/device.mk)
 # Inherit some common Lineage stuff.
 $(call inherit-product, vendor/lineage/config/common_full_phone.mk)
 
+# Importante para dispositivos de 1GB RAM (Android Go)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/product/go_defaults.mk)
+
 PRODUCT_DEVICE := pettyl
 PRODUCT_NAME := lineage_pettyl
 PRODUCT_BRAND := motorola
@@ -28,10 +32,6 @@ PRODUCT_BUILD_PROP_OVERRIDES += \
 # Forzar explícitamente el esquema No-SAR
 PRODUCT_BUILD_SYSTEM_ROOT_IMAGE := false
 PRODUCT_USE_DYNAMIC_PARTITIONS := false
-
-# Importante para dispositivos de 1GB RAM (Android Go)
-(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
-(call inherit-product, $(SRC_TARGET_DIR)/product/go_defaults.mk)
 
 # =================================================================
 # =================================================================
