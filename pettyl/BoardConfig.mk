@@ -47,7 +47,7 @@ BOARD_KERNEL_OFFSET := 0x00008000
 BOARD_RAMDISK_OFFSET := 0x01000000
 BOARD_TAGS_OFFSET := 0x00000100
 
-# VITAL: --header_version 0 fuerza el formato legacy boot.img, evitando el ramdisk en system
+# VITAL: --header_version 0 fuerza el formato legacy boot.img
 BOARD_MKBOOTIMG_ARGS := --kernel_offset $(BOARD_KERNEL_OFFSET) \
                         --ramdisk_offset $(BOARD_RAMDISK_OFFSET) \
                         --tags_offset $(BOARD_TAGS_OFFSET) \
@@ -67,18 +67,19 @@ BOARD_USERDATAIMAGE_PARTITION_SIZE := 12715015680
 BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
 BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
-BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
+TARGET_USERIMAGES_USE_F2FS := true
 
 # Legacy Partitioning (Non-SAR)
 TARGET_COPY_OUT_VENDOR := vendor
 TARGET_COPY_OUT_SYSTEM := system
-
-# ==========================================================
-# FORZAR ESQUEMA NO-SAR (Legacy)
-# ==========================================================
 BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
 BOARD_USES_RECOVERY_AS_BOOT := false
 TARGET_NO_RECOVERY := false
+
+# CLEAN SYSTEM FIX: Evitar carpetas root en la particion system
+BOARD_ROOT_EXTRA_FOLDERS := 
+BOARD_ROOT_EXTRA_SYMLINKS := 
 
 # Bootloader Assertion
 TARGET_BOOTLOADER_BOARD_NAME := msm8937
@@ -88,7 +89,6 @@ TARGET_BOOTLOADER_BOARD_NAME := msm8937
 # ==========================================================
 PRODUCT_FULL_TREBLE_OVERRIDE := true
 BOARD_VNDK_VERSION := current
-# APEX es problemático en Legacy, forzar aplanado
 OVERRIDE_TARGET_FLATTEN_APEX := true
 
 # ==========================================================
@@ -97,25 +97,10 @@ OVERRIDE_TARGET_FLATTEN_APEX := true
 AB_OTA_UPDATER := false
 
 # ==========================================================
-# Properties
-# ==========================================================
-TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
-TARGET_VENDOR_PROP += $(DEVICE_PATH)/vendor.prop
-
-# ==========================================================
-# Audio
-# ==========================================================
-USE_XML_AUDIO_POLICY_CONF := 1
-
-# ==========================================================
-# Recovery
+# Recovery & Audio
 # ==========================================================
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
-
-# All android go devices use f2fs userdata
-#TARGET_USERIMAGES_USE_EXT4 := true
-TARGET_USERIMAGES_USE_F2FS := true
-BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
+USE_XML_AUDIO_POLICY_CONF := 1
 
 # ==========================================================
 # Security & VINTF
@@ -123,7 +108,5 @@ BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
 VENDOR_SECURITY_PATCH := 2020-07-01
 DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest.xml
 
-# ==========================================================
 # Inherit Vendor
-# ==========================================================
 include vendor/motorola/pettyl/BoardConfigVendor.mk
