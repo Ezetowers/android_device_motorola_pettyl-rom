@@ -25,9 +25,13 @@ PRODUCT_BUILD_PROP_OVERRIDES += \
     BuildDesc="pettyl-user 8.1.0 OPGS28.54-53-8-20 90aa7 release-keys" \
     BuildFingerprint=motorola/pettyl/pettyl:8.1.0/OPGS28.54-53-8-20/90aa7:user/release-keys
 
-# Force it NOT to be System-as-Root
+# Forzar explícitamente el esquema No-SAR
 PRODUCT_BUILD_SYSTEM_ROOT_IMAGE := false
 PRODUCT_USE_DYNAMIC_PARTITIONS := false
+
+# Importante para dispositivos de 1GB RAM (Android Go)
+(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
+(call inherit-product, $(SRC_TARGET_DIR)/product/go_defaults.mk)
 
 # =================================================================
 # =================================================================
