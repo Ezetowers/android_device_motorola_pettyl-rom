@@ -76,12 +76,12 @@ jobs:
           export USE_CCACHE=1
           export CCACHE_DIR=/home/runner/.ccache
           # Subimos Java a 6GB aprovechando el Swap
-          export _JAVA_OPTIONS="-Xmx6g"
+          export _JAVA_OPTIONS="-Xmx4g"
           source build/envsetup.sh
           lunch lineage_pettyl-userdebug
           
           # FORZAMOS -j8 como pediste
-          mka bacon systemimage -j8 2>&1 | tee build_log.txt
+          mka bacon systemimage -j6 2>&1 | tee build_log.txt
           
           if [ ${PIPESTATUS[0]} -eq 0 ]; then
             echo "STATUS=successfully compiled" >> $GITHUB_ENV
