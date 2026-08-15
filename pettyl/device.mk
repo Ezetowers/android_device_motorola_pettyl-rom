@@ -7,12 +7,6 @@
 # API levels
 PRODUCT_SHIPPING_API_LEVEL := 27
 
-# Disable Treble/VINTF manifest enforcement (prevents compatibility.zip
-# generation in the OTA package; this device is non-Treble legacy and
-# TWRP rejects compatibility.zip with "Invalid zip file format").
-PRODUCT_ENFORCE_VINTF_MANIFEST := false
-PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
-
 # Health & Symlinks
 PRODUCT_PACKAGES += \
     android.hardware.health@2.1-impl \
@@ -27,64 +21,70 @@ PRODUCT_ENFORCE_RRO_TARGETS := *
 PRODUCT_CHARACTERISTICS := default
 
 # ==========================================================
-# ROOTDIR: Archivos forzados al RAMDISK (Evita carpetas root en system.img)
+# ROOTDIR: fstab goes to boot ramdisk (required for init mount_all)
+# The vendor .sh and .rc files are defined as Soong modules in
+# rootdir/Android.bp (sh_binary -> /vendor/bin/, prebuilt_etc ->
+# /vendor/etc/init/hw/) and must be added to PRODUCT_PACKAGES
+# so they are actually built and installed. Forcing them into the
+# boot ramdisk via PRODUCT_COPY_FILES displaces AOSP's standard
+# modules (init.rc, sbin/charger, ueventd) causing fastboot fallback.
 # ==========================================================
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_RAMDISK)/fstab.qcom
 
-# Scripts (.sh) -> Ramdisk
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/bin/apanic_annotate.sh:$(TARGET_COPY_OUT_RAMDISK)/apanic_annotate.sh \
-    $(LOCAL_PATH)/rootdir/bin/apanic_copy.sh:$(TARGET_COPY_OUT_RAMDISK)/apanic_copy.sh \
-    $(LOCAL_PATH)/rootdir/bin/apanic_save.sh:$(TARGET_COPY_OUT_RAMDISK)/apanic_save.sh \
-    $(LOCAL_PATH)/rootdir/bin/hardware_revisions.sh:$(TARGET_COPY_OUT_RAMDISK)/hardware_revisions.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.class_main.sh:$(TARGET_COPY_OUT_RAMDISK)/init.class_main.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.crda.sh:$(TARGET_COPY_OUT_RAMDISK)/init.crda.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.gbmods.sh:$(TARGET_COPY_OUT_RAMDISK)/init.gbmods.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.mdm.sh:$(TARGET_COPY_OUT_RAMDISK)/init.mdm.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.mmi.audio.sh:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.audio.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.mmi.block_perm.sh:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.block_perm.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.mmi.boot.sh:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.boot.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.mmi.carrier.sh:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.carrier.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.mmi.mdlog-getlogs.sh:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.mdlog-getlogs.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.mmi.touch.sh:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.touch.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.mmi.usb.sh:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.usb.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.oem.hw.sh:$(TARGET_COPY_OUT_RAMDISK)/init.oem.hw.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.class_core.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.class_core.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.coex.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.coex.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.crashdata.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.crashdata.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.early_boot.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.early_boot.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.efs.sync.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.efs.sync.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.post_boot.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.post_boot.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.sdio.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.sdio.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.sensors.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.sensors.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.syspart_fixup.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.syspart_fixup.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qcom.wifi.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.wifi.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qti.fm.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qti.fm.sh \
-    $(LOCAL_PATH)/rootdir/bin/init.qti.ims.sh:$(TARGET_COPY_OUT_RAMDISK)/init.qti.ims.sh \
-    $(LOCAL_PATH)/rootdir/bin/modem_erase_modemst12.sh:$(TARGET_COPY_OUT_RAMDISK)/modem_erase_modemst12.sh \
-    $(LOCAL_PATH)/rootdir/bin/pstore_annotate.sh:$(TARGET_COPY_OUT_RAMDISK)/pstore_annotate.sh \
-    $(LOCAL_PATH)/rootdir/bin/qca6234-service.sh:$(TARGET_COPY_OUT_RAMDISK)/qca6234-service.sh \
-    $(LOCAL_PATH)/rootdir/bin/wlan_carrier_bin.sh:$(TARGET_COPY_OUT_RAMDISK)/wlan_carrier_bin.sh
+# Vendor .sh scripts (defined in rootdir/Android.bp as sh_binary vendor:true)
+PRODUCT_PACKAGES += \
+    apanic_annotate.sh \
+    apanic_copy.sh \
+    apanic_save.sh \
+    hardware_revisions.sh \
+    init.class_main.sh \
+    init.crda.sh \
+    init.gbmods.sh \
+    init.mdm.sh \
+    init.mmi.audio.sh \
+    init.mmi.block_perm.sh \
+    init.mmi.boot.sh \
+    init.mmi.carrier.sh \
+    init.mmi.mdlog-getlogs.sh \
+    init.mmi.touch.sh \
+    init.mmi.usb.sh \
+    init.oem.hw.sh \
+    init.qcom.class_core.sh \
+    init.qcom.coex.sh \
+    init.qcom.crashdata.sh \
+    init.qcom.early_boot.sh \
+    init.qcom.efs.sync.sh \
+    init.qcom.post_boot.sh \
+    init.qcom.sdio.sh \
+    init.qcom.sensors.sh \
+    init.qcom.sh \
+    init.qcom.syspart_fixup.sh \
+    init.qcom.wifi.sh \
+    init.qti.fm.sh \
+    init.qti.ims.sh \
+    modem_erase_modemst12.sh \
+    pstore_annotate.sh \
+    qca6234-service.sh \
+    wlan_carrier_bin.sh
 
-# Configs (.rc) -> Ramdisk
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.chipset.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.chipset.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.common.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.common.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.debug.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.debug.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.diag.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.diag.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.diag_mdlog.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.diag_mdlog.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.nonab.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.nonab.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.overlay.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.overlay.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.sensor.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.sensor.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.usb.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.usb.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.mmi.volte.rc:$(TARGET_COPY_OUT_RAMDISK)/init.mmi.volte.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.oem.rc:$(TARGET_COPY_OUT_RAMDISK)/init.oem.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.qcom.factory.rc:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.factory.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.qcom.rc:$(TARGET_COPY_OUT_RAMDISK)/init.qcom.rc \
-    $(LOCAL_PATH)/rootdir/etc/init.target.rc:$(TARGET_COPY_OUT_RAMDISK)/init.target.rc
+# Device .rc files (defined in rootdir/Android.bp as prebuilt_etc vendor:true, sub_dir: "init/hw")
+PRODUCT_PACKAGES += \
+    init.mmi.chipset.rc \
+    init.mmi.common.rc \
+    init.mmi.debug.rc \
+    init.mmi.diag.rc \
+    init.mmi.diag_mdlog.rc \
+    init.mmi.nonab.rc \
+    init.mmi.overlay.rc \
+    init.mmi.rc \
+    init.mmi.sensor.rc \
+    init.mmi.usb.rc \
+    init.mmi.volte.rc \
+    init.oem.rc \
+    init.qcom.factory.rc \
+    init.qcom.rc \
+    init.target.rc
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \

@@ -74,6 +74,14 @@ TARGET_USERIMAGES_USE_F2FS := true
 # Legacy Partitioning (Non-SAR)
 TARGET_COPY_OUT_VENDOR := vendor
 TARGET_COPY_OUT_SYSTEM := system
+# CRITICAL: In AOSP 10, standard ramdisk modules (init.rc, ueventd.rc,
+# charger, sbin/*) install to TARGET_ROOT_OUT via LOCAL_MODULE_PATH in
+# system/core. For non-SAR boot images, mkbootfs packages from
+# TARGET_RAMDISK_OUT. If these differ (/root vs /ramdisk), the standard
+# AOSP files end up in /root/ and are missing from boot.img -> fastboot.
+# Setting TARGET_COPY_OUT_ROOT := ramdisk makes them the same directory
+# so all standard modules flow into the boot image's ramdisk.
+TARGET_COPY_OUT_ROOT := ramdisk
 BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
 BOARD_USES_RECOVERY_AS_BOOT := false
 TARGET_NO_RECOVERY := false
@@ -86,12 +94,15 @@ BOARD_ROOT_EXTRA_SYMLINKS :=
 TARGET_BOOTLOADER_BOARD_NAME := msm8937
 
 # ==========================================================
-# Treble & APEX (Disabled: legacy non-Treble device)
-# The Moto E5 Play ships Oreo without proper Treble vendor support.
-# Keeping VINTF manifest enforcement enabled produces a compatibility.zip
-# in the OTA package that TWRP rejects with "Invalid zip file format".
+# Treble & APEX (original config restored)
+# Only PRODUCT_ENFORCE_VINTF_MANIFEST is disabled via override,
+# which prevents compatibility.zip generation without breaking
+# AOSP's standard ramdisk module inheritance.
+# Manual step: remove compatibility.zip from the final OTA zip.
 # ==========================================================
-PRODUCT_FULL_TREBLE_OVERRIDE := false
+PRODUCT_FULL_TREBLE_OVERRIDE := true
+BOARD_VNDK_VERSION := current
+OVERRIDE_TARGET_FLATTEN_APEX := true
 TARGET_VENDOR_PROP := $(DEVICE_PATH)/vendor.prop
 
 # ==========================================================
@@ -106,13 +117,13 @@ TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
 USE_XML_AUDIO_POLICY_CONF := 1
 
 # ==========================================================
-# Security & VINTF (Disabled: legacy non-Treble device)
+# Security & VINTF
+# Disable ONLY the VINTF manifest enforcement via _OVERRIDE so the
+# OTA package won't contain compatibility.zip (which TWRP rejects).
+# Treble itself stays enabled to preserve AOSP ramdisk inheritance.
 # ==========================================================
 VENDOR_SECURITY_PATCH := 2020-07-01
-PRODUCT_ENFORCE_VINTF_MANIFEST := false
-ifeq ($(PRODUCT_ENFORCE_VINTF_MANIFEST),true)
-DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest.xml
-endif
+PRODUCT_ENFORCE_VINTF_MANIFEST_OVERRIDE := false
 
 # Inherit Vendor
 include vendor/motorola/pettyl/BoardConfigVendor.mk
