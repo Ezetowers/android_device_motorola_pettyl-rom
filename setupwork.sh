@@ -108,6 +108,19 @@ cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
 rm -rf /tmp/pettyl_unified
 success "Fuentes del dispositivo organizadas."
 
+# Verificacion rapida de que las ediciones locales sobrevivieron
+if grep -q "prebuilts/dt.img" device/motorola/pettyl/BoardConfig.mk; then
+    success "BoardConfig.mk contiene el fix del Device Tree (dt_size)."
+else  Not Committed Yet
+    warn "ADVERTENCIA: BoardConfig.mk no incluye --dt; revisa que el script se ejecuta desde el repo correcto."
+fi
+if grep -q "PRODUCT_ENFORCE_VINTF_MANIFEST := false" device/motorola/pettyl/device.mk 2>/dev/null || \
+   grep -q "PRODUCT_ENFORCE_VINTF_MANIFEST := false" device/motorola/pettyl/BoardConfig.mk 2>/dev/null; then
+    success "VINTF/Treble deshabilitado correctamente."
+else
+    warn "ADVERTENCIA: no se encontro PRODUCT_ENFORCE_VINTF_MANIFEST := false."
+fi
+
 # info "TRUCO: Eliminando la carpeta .repo para liberar espacio vital (~25 GB)..."
 # rm -rf "${ANDROID_TOP_DIR}/.repo"
 # success "Espacio en disco recuperado."
