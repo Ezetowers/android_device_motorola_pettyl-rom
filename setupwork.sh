@@ -108,9 +108,9 @@ cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
 rm -rf /tmp/pettyl_unified
 success "Fuentes del dispositivo organizadas."
 
-info "TRUCO: Eliminando la carpeta .repo para liberar espacio vital (~25 GB)..."
-rm -rf "${ANDROID_TOP_DIR}/.repo"
-success "Espacio en disco recuperado."
+# info "TRUCO: Eliminando la carpeta .repo para liberar espacio vital (~25 GB)..."
+# rm -rf "${ANDROID_TOP_DIR}/.repo"
+# success "Espacio en disco recuperado."
 
 # --- FASE 4: Compilación de la ROM ---
 info "FASE 4: Iniciando la compilación de LineageOS..."
@@ -119,7 +119,7 @@ cd "${ANDROID_TOP_DIR}"
 info "Configurando ccache para acelerar futuras compilaciones..."
 export USE_CCACHE=1
 export CCACHE_DIR=~/.ccache
-ccache -M 25G # Puedes ajustar este valor (ej. 50G)
+ccache -M 150G # Puedes ajustar este valor (ej. 50G)
 success "Ccache configurado con un tamaño de 25G."
 
 info "Cargando el entorno de compilación..."

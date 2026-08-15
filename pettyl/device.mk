@@ -7,6 +7,12 @@
 # API levels
 PRODUCT_SHIPPING_API_LEVEL := 27
 
+# Disable Treble/VINTF manifest enforcement (prevents compatibility.zip
+# generation in the OTA package; this device is non-Treble legacy and
+# TWRP rejects compatibility.zip with "Invalid zip file format").
+PRODUCT_ENFORCE_VINTF_MANIFEST := false
+PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
+
 # Health & Symlinks
 PRODUCT_PACKAGES += \
     android.hardware.health@2.1-impl \

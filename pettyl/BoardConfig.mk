@@ -51,6 +51,7 @@ BOARD_TAGS_OFFSET := 0x00000100
 BOARD_MKBOOTIMG_ARGS := --kernel_offset $(BOARD_KERNEL_OFFSET) \
                         --ramdisk_offset $(BOARD_RAMDISK_OFFSET) \
                         --tags_offset $(BOARD_TAGS_OFFSET) \
+                        --dt $(DEVICE_PATH)/prebuilts/dt.img \
                         --header_version 0
 
 # ==========================================================
@@ -85,11 +86,13 @@ BOARD_ROOT_EXTRA_SYMLINKS :=
 TARGET_BOOTLOADER_BOARD_NAME := msm8937
 
 # ==========================================================
-# Treble & APEX
+# Treble & APEX (Disabled: legacy non-Treble device)
+# The Moto E5 Play ships Oreo without proper Treble vendor support.
+# Keeping VINTF manifest enforcement enabled produces a compatibility.zip
+# in the OTA package that TWRP rejects with "Invalid zip file format".
 # ==========================================================
-PRODUCT_FULL_TREBLE_OVERRIDE := true
-BOARD_VNDK_VERSION := current
-OVERRIDE_TARGET_FLATTEN_APEX := true
+PRODUCT_FULL_TREBLE_OVERRIDE := false
+TARGET_VENDOR_PROP := $(DEVICE_PATH)/vendor.prop
 
 # ==========================================================
 # A/B OTA Updater
@@ -103,10 +106,13 @@ TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.qcom
 USE_XML_AUDIO_POLICY_CONF := 1
 
 # ==========================================================
-# Security & VINTF
+# Security & VINTF (Disabled: legacy non-Treble device)
 # ==========================================================
 VENDOR_SECURITY_PATCH := 2020-07-01
+PRODUCT_ENFORCE_VINTF_MANIFEST := false
+ifeq ($(PRODUCT_ENFORCE_VINTF_MANIFEST),true)
 DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest.xml
+endif
 
 # Inherit Vendor
 include vendor/motorola/pettyl/BoardConfigVendor.mk
