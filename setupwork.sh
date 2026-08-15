@@ -111,6 +111,8 @@ success "Fuentes del dispositivo organizadas."
 # info "TRUCO: Eliminando la carpeta .repo para liberar espacio vital (~25 GB)..."
 # rm -rf "${ANDROID_TOP_DIR}/.repo"
 # success "Espacio en disco recuperado."
+cd "${ANDROID_TOP_DIR}/external/chromium-webview/prebuilt/arm"
+git lfs pull
 
 # --- FASE 4: Compilación de la ROM ---
 info "FASE 4: Iniciando la compilación de LineageOS..."
