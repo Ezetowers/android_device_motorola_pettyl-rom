@@ -94,19 +94,43 @@ repo sync -c -j${CPUS} --force-sync --no-clone-bundle --no-tags
 success "Sincronización de las fuentes completada."
 
 # --- FASE 3: Preparación de las Fuentes del Dispositivo ---
-info "FASE 3: Clonando y organizando los repositorios del dispositivo 'pettyl'..."
+info "FASE 3: Organizando los repositorios del dispositivo 'pettyl'..."
 cd "${ANDROID_TOP_DIR}"
 
-git clone https://github.com/elmendezz/android_device_motorola_pettyl-rom -b lineage-17.1 /tmp/pettyl_unified
+# Usar la copia local del repo (donde reside este script) en lugar de
+# clonar desde GitHub. Esto evita sobrescribir ediciones locales.
+# Determina el directorio del script:  Not Committed Yet
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PETTYL_SRC="${SCRIPT_DIR}"
+
+if [ ! -d "${PETTYL_SRC}/pettyl" ] || [ ! -d "${PETTYL_SRC}/vendor_pettyl" ]; then
+    error "No se encontro el arbol del dispositivo en ${PETTYL_SRC}/pettyl o vendor en ${PETTYL_SRC}/vendor_pettyl"
+    warn "Asegurate de ejecutar setupwork.sh desde el directorio raiz del repo clonado."
+    exit 1
+fi
+
 mkdir -p device/motorola/pettyl
 mkdir -p vendor/motorola/pettyl
 
-info "Copiando archivos del dispositivo a 'device/motorola/pettyl'..."
-cp -r /tmp/pettyl_unified/pettyl/* device/motorola/pettyl/
-info "Copiando archivos de vendor a 'vendor/motorola/pettyl'..."
-cp -r /tmp/pettyl_unified/vendor_pettyl/* vendor/motorola/pettyl/
-rm -rf /tmp/pettyl_unified
-success "Fuentes del dispositivo organizadas."
+info "Copiando archivos del dispositivo desde ${PETTYL_SRC}/pettyl -> device/motorola/pettyl..."
+cp -r "${PETTYL_SRC}"/pettyl/* device/motorola/pettyl/
+info "Copiando archivos de vendor desde ${PETTYL_SRC}/vendor_pettyl -> vendor/motorola/pettyl..."
+cp -r "${PETTYL_SRC}"/vendor_pettyl/* vendor/motorola/pettyl/
+
+# Verificacion rapida de que las ediciones locales sobrevivieron
+if grep -q "prebuilts/dt.img" device/motorola/pettyl/BoardConfig.mk; then
+    success "BoardConfig.mk contiene el fix del Device Tree (dt_size)."
+else
+    warn "ADVERTENCIA: BoardConfig.mk no incluye --dt; revisa que el script se ejecuta desde el repo correcto."
+fi
+if grep -q "PRODUCT_ENFORCE_VINTF_MANIFEST := false" device/motorola/pettyl/device.mk 2>/dev/null || \
+   grep -q "PRODUCT_ENFORCE_VINTF_MANIFEST := false" device/motorola/pettyl/BoardConfig.mk 2>/dev/null; then
+    success "VINTF/Treble deshabilitado correctamente."
+else
+    warn "ADVERTENCIA: no se encontro PRODUCT_ENFORCE_VINTF_MANIFEST := false."
+fi
+
+success "Fuentes del dispositivo organizadas desde copia local."
 
 # info "TRUCO: Eliminando la carpeta .repo para liberar espacio vital (~25 GB)..."
 # rm -rf "${ANDROID_TOP_DIR}/.repo"
