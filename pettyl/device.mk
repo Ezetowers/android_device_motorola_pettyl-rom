@@ -32,6 +32,31 @@ PRODUCT_CHARACTERISTICS := default
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.qcom:$(TARGET_COPY_OUT_RAMDISK)/fstab.qcom
 
+# ===========================================================
+# CRITICAL FIX: ueventd.rc for ramdisk root (/ueventd.rc)
+# ----------------------------------------------------------
+# On non-SAR legacy boot the AOSP-standard /ueventd.rc must exist in
+# the boot.img ramdisk so that ueventd, during coldboot, can chmod
+# /dev/binder, /dev/hwbinder and /dev/vndbinder to 0666.  The stock
+# Motorola Oreo vendor provides its own /vendor/ueventd.rc but it does
+# NOT set binder permissions; only this AOSP-standard file does.
+#
+# With the file absent (as in LOS builds 20260814 and 20260815), /dev/binder
+# is created by the kernel misc-device layer with default restrictive
+# permissions. When init reaches InitBinder at ~t=3.33s,
+# ProcessState::self("/dev/binder") calls open_driver() which fails
+# (mDriverFD < 0). The constructor then fires:
+#     LOG_ALWAYS_FATAL_IF(mDriverFD < 0, "Binder driver could not be opened...")
+# -> __android_log_assert() -> abort() -> REBOOT_BOOTLOADER_ON_PANIC ->
+#   reboot into fastboot.
+#
+# See LOS backtrace in console-ramoops lines 1188-1209:
+#     #06 libbinder.so ProcessState::ProcessState(...)
+#     #05 liblog.so      __android_log_assert
+# ===========================================================
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/ueventd.rc:$(TARGET_COPY_OUT_RAMDISK)/ueventd.rc
+
 # Vendor .sh scripts (defined in rootdir/Android.bp as sh_binary vendor:true)
 PRODUCT_PACKAGES += \
     apanic_annotate.sh \

@@ -1,0 +1,43 @@
+# Standard AOSP ueventd.rc for non-SAR devices
+# This file must be in /ueventd.rc (ramdisk root) so ueventd can chmod
+# the binder/hwbinder/vndbinder device nodes during coldboot.
+# Without these rules, /dev/binder is created with restrictive default
+# permissions and init aborts in InitBinder (ProcessState cannot open it).
+
+subsystem graphics
+    devname uevent_devpath
+    dirname /dev/graphics
+
+subsystem drm
+    devname uevent_devpath
+    dirname /dev/dri
+
+subsystem input
+    devname uevent_devpath
+    dirname /dev/input
+
+subsystem sound
+    devname uevent_devpath
+    dirname /dev/snd
+
+# Standard device nodes required for boot on legacy non-SAR devices.
+# These MUST match what AOSP's system/core/rootdir/ueventd.rc provides
+# (the stock Motorola Oreo vendor sepolicy expects /dev/binder to exist
+# with mode 0666 before InitBinder runs).
+/dev/null                 0666   root       root
+/dev/zero                 0666   root       root
+/dev/full                 0666   root       root
+/dev/ptmx                 0666   root       root
+/dev/tty                  0666   root       root
+/dev/random               0666   root       root
+/dev/urandom              0666   root       root
+
+# Make HW RNG readable by group system to let EntropyMixer read it.
+/dev/hw_random            0440   root       system
+/dev/ashmem               0666   root       root
+/dev/binder               0666   root       root
+/dev/hwbinder             0666   root       root
+/dev/vndbinder            0666   root       root
+
+# pmsg for userspace logging to persistent store across reboot.
+/dev/pmsg0                0222   root       log

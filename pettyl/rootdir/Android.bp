@@ -314,3 +314,6 @@ prebuilt_etc {
     src: "etc/fstab.qcom",
     vendor: true,
 }
+
+// Standard AOSP ueventd.rc for legacy non-SAR boot.
+// Installed via PRODUCT_COPY_FILES in device.mk to $(TARGET_COPY_OUT_RAMDISK)/ueventd.rc.
